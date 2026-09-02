@@ -1,0 +1,128 @@
+.stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: radial-gradient(circle at 50% 0%, #0c2417 0%, #0b0e14 55%);
+}
+
+.boardWrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 24px 16px 40px;
+}
+
+.board {
+  position: relative;
+  width: min(92vw, 440px);
+  aspect-ratio: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  gap: 10px;
+  padding: 10px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  touch-action: none;
+  --gap: 10px;
+  --pad: 10px;
+}
+
+.cell {
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tile {
+  position: absolute;
+  width: calc((100% - 2 * var(--pad) - 3 * var(--gap)) / 4);
+  height: calc((100% - 2 * var(--pad) - 3 * var(--gap)) / 4);
+  left: calc(var(--pad) + var(--c) * ((100% - 2 * var(--pad) - 3 * var(--gap)) / 4 + var(--gap)));
+  top: calc(var(--pad) + var(--r) * ((100% - 2 * var(--pad) - 3 * var(--gap)) / 4 + var(--gap)));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  transition: left 0.12s ease, top 0.12s ease;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+.new {
+  animation: appear 0.18s ease;
+}
+
+.merged {
+  animation: bump 0.18s ease;
+}
+
+@keyframes appear {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes bump {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.controls button {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--accent, #22c55e);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.controls button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.controls button:active {
+  transform: scale(0.92);
+}
+
+.controlRow {
+  display: flex;
+  gap: 10px;
+}
+
+.hint {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: var(--muted, #8b93a7);
+}
+
+@media (min-width: 720px) {
+  .controls {
+    display: none;
+  }
+}
