@@ -3,7 +3,11 @@
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
-  background: radial-gradient(circle at 50% 0%, #0c2417 0%, #0b0e14 55%);
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% -10%, rgba(34, 197, 94, 0.22), transparent 38%),
+    radial-gradient(circle at 10% 90%, rgba(16, 185, 129, 0.1), transparent 30%),
+    #080c12;
 }
 
 .boardWrap {
@@ -12,61 +16,157 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 24px;
+  gap: 28px;
   padding: 24px 16px 40px;
 }
 
+/* Board */
 .board {
+  --gap: 10px;
+  --pad: 10px;
+
   position: relative;
   width: min(92vw, 440px);
   aspect-ratio: 1;
+
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   grid-template-rows: repeat(4, 1fr);
-  gap: 10px;
-  padding: 10px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  gap: var(--gap);
+
+  padding: var(--pad);
+
+  border-radius: 24px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.09),
+      rgba(255, 255, 255, 0.035)
+    );
+
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
   touch-action: none;
-  --gap: 10px;
-  --pad: 10px;
+  user-select: none;
 }
 
+/* Empty cells */
 .cell {
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
+  border-radius: 14px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.055),
+      rgba(255, 255, 255, 0.025)
+    );
+
+  border: 1px solid rgba(255, 255, 255, 0.035);
+
+  box-shadow:
+    inset 0 1px 4px rgba(0, 0, 0, 0.18);
 }
 
+/* Tiles */
 .tile {
   position: absolute;
+
   width: calc((100% - 2 * var(--pad) - 3 * var(--gap)) / 4);
   height: calc((100% - 2 * var(--pad) - 3 * var(--gap)) / 4);
-  left: calc(var(--pad) + var(--c) * ((100% - 2 * var(--pad) - 3 * var(--gap)) / 4 + var(--gap)));
-  top: calc(var(--pad) + var(--r) * ((100% - 2 * var(--pad) - 3 * var(--gap)) / 4 + var(--gap)));
+
+  left: calc(
+    var(--pad) +
+    var(--c) *
+      (
+        (100% - 2 * var(--pad) - 3 * var(--gap)) / 4 +
+        var(--gap)
+      )
+  );
+
+  top: calc(
+    var(--pad) +
+    var(--r) *
+      (
+        (100% - 2 * var(--pad) - 3 * var(--gap)) / 4 +
+        var(--gap)
+      )
+  );
+
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+
+  border-radius: 14px;
+
   font-family: var(--font-display);
   font-weight: 800;
-  transition: left 0.12s ease, top 0.12s ease;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  line-height: 1;
+
+  /* Main slide animation */
+  transition:
+    left 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    top 160ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  will-change: left, top, transform;
+
+  /* Tile depth */
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+
+  z-index: 2;
 }
 
+/* Add a subtle shine */
+.tile::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.18),
+      transparent 35%,
+      transparent 70%,
+      rgba(255, 255, 255, 0.04)
+    );
+}
+
+/* New tile */
 .new {
-  animation: appear 0.18s ease;
+  animation: appear 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Merge */
 .merged {
-  animation: bump 0.18s ease;
+  z-index: 3;
+  animation: bump 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes appear {
-  from {
-    transform: scale(0);
+  0% {
+    opacity: 0;
+    transform: scale(0.45);
   }
-  to {
+
+  70% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+
+  100% {
     transform: scale(1);
   }
 }
@@ -75,39 +175,26 @@
   0% {
     transform: scale(1);
   }
-  50% {
-    transform: scale(1.12);
+
+  40% {
+    transform: scale(1.16);
   }
+
+  70% {
+    transform: scale(0.97);
+  }
+
   100% {
     transform: scale(1);
   }
 }
 
+/* Desktop controls */
 .controls {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-}
-
-.controls button {
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--accent, #22c55e);
-  font-size: 1.2rem;
-  cursor: pointer;
-  transition: background 0.15s ease, transform 0.1s ease;
-}
-
-.controls button:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.controls button:active {
-  transform: scale(0.92);
+  gap: 12px;
 }
 
 .controlRow {
@@ -115,14 +202,93 @@
   gap: 10px;
 }
 
+.controls button {
+  width: 58px;
+  height: 58px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 16px;
+
+  border: 1px solid rgba(255, 255, 255, 0.12);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.11),
+      rgba(255, 255, 255, 0.055)
+    );
+
+  color: var(--accent, #22c55e);
+
+  font-size: 1.15rem;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  transition:
+    background 150ms ease,
+    transform 100ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.controls button:hover {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(34, 197, 94, 0.18),
+      rgba(255, 255, 255, 0.08)
+    );
+
+  border-color: rgba(34, 197, 94, 0.35);
+
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.3),
+    0 0 18px rgba(34, 197, 94, 0.12);
+}
+
+.controls button:active {
+  transform: scale(0.91);
+}
+
 .hint {
-  margin: 4px 0 0;
+  margin: 2px 0 0;
+
   font-size: 0.82rem;
   color: var(--muted, #8b93a7);
 }
 
-@media (min-width: 720px) {
+/*
+  IMPORTANT:
+  Show controls on desktop,
+  hide them on mobile.
+*/
+@media (max-width: 719px) {
   .controls {
     display: none;
+  }
+}
+
+@media (min-width: 720px) {
+  .boardWrap {
+    gap: 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile {
+    transition: none;
+  }
+
+  .new,
+  .merged {
+    animation: none;
   }
 }

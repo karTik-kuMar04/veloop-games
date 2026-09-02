@@ -17,19 +17,20 @@ const GUIDE = [
 ]
 
 const TILE_COLORS = {
-  2: "#334155",
-  4: "#3f6212",
-  8: "#166534",
-  16: "#15803d",
-  32: "#16a34a",
-  64: "#22c55e",
-  128: "#4ade80",
-  256: "#84cc16",
-  512: "#a3e635",
-  1024: "#facc15",
+  2: "#64748b",
+  4: "#84cc16",
+  8: "#22c55e",
+  16: "#10b981",
+  32: "#06b6d4",
+  64: "#0ea5e9",
+  128: "#3b82f6",
+  256: "#6366f1",
+  512: "#8b5cf6",
+  1024: "#d946ef",
   2048: "#f59e0b",
+  4096: "#f97316",
+  8192: "#ef4444",
 }
-
 let tileSeq = 1
 function newTile(value, r, c) {
   return { id: tileSeq++, value, r, c, isNew: true, merged: false }
@@ -274,9 +275,22 @@ export default function MergeMaster() {
               style={{
                 "--r": t.r,
                 "--c": t.c,
-                background: TILE_COLORS[t.value] || "#f59e0b",
-                color: t.value <= 4 ? "#e6e9f0" : "#0b0e14",
-                fontSize: t.value >= 1024 ? "1.6rem" : t.value >= 128 ? "1.9rem" : "2.3rem",
+                background: `linear-gradient(
+                  145deg,
+                  ${TILE_COLORS[t.value] || "#ef4444"},
+                  color-mix(
+                    in srgb,
+                    ${TILE_COLORS[t.value] || "#ef4444"} 72%,
+                    #000 28%
+                  )
+                )`,
+                color: t.value <= 4 ? "#f8fafc" : "#08110d",
+                fontSize:
+                  t.value >= 1024
+                    ? "1.5rem"
+                    : t.value >= 128
+                      ? "1.8rem"
+                      : "2.3rem",
               }}
             >
               {t.value}
