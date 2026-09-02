@@ -1,0 +1,62 @@
+.band {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: linear-gradient(180deg, rgba(19, 10, 38, 0.65), rgba(11, 6, 22, 0.9));
+  border-top: 1px solid var(--vl-border);
+}
+
+.xp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--accent, var(--vl-gold));
+  font-weight: 800;
+  text-shadow: 0 0 14px color-mix(in srgb, var(--accent, #ffc53d) 55%, transparent);
+}
+
+.xpValue {
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+}
+.xpLabel {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.lg .xpValue {
+  font-size: 1.5rem;
+}
+
+.playBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1.2rem;
+  border: none;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 1rem;
+  color: #0b0616;
+  cursor: pointer;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent, #ffc53d) 92%, white), var(--accent, #ffc53d));
+  box-shadow:
+    0 8px 22px color-mix(in srgb, var(--accent, #ffc53d) 40%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transition: transform 0.14s ease, box-shadow 0.14s ease, filter 0.14s ease;
+}
+
+.playBtn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+}
+.playBtn:active {
+  transform: translateY(0);
+}
+
+.lg .playBtn {
+  padding: 0.7rem 1.6rem;
+  font-size: 1.15rem;
+}

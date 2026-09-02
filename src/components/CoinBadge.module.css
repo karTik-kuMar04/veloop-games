@@ -1,0 +1,58 @@
+.badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 197, 61, 0.16), rgba(245, 158, 11, 0.06));
+  border: 1px solid rgba(255, 197, 61, 0.4);
+  color: var(--vl-gold);
+  font-weight: 800;
+  transition: transform 0.18s ease;
+  white-space: nowrap;
+}
+
+.lg {
+  padding: 0.5rem 1rem;
+  font-size: 1.15rem;
+}
+
+.bump {
+  transform: scale(1.12);
+}
+
+.icon {
+  width: 1.35rem;
+  height: 1.35rem;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+}
+
+.lg .icon {
+  width: 1.7rem;
+  height: 1.7rem;
+}
+
+.value {
+  font-variant-numeric: tabular-nums;
+}
+
+.label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--vl-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.delta {
+  position: absolute;
+  right: 0.6rem;
+  top: -0.4rem;
+  color: var(--vl-green);
+  font-size: 0.85rem;
+  font-weight: 800;
+  animation: vl-float-up 0.9s ease forwards;
+  pointer-events: none;
+}

@@ -1,0 +1,128 @@
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--vl-surface);
+  border: 1px solid var(--vl-border);
+  color: var(--vl-muted);
+  font-weight: 700;
+  padding: 0.4rem 0.8rem;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-bottom: 1.2rem;
+}
+.back:hover {
+  color: var(--vl-text);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 380px) 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.artWrap {
+  border-radius: var(--vl-radius);
+  overflow: hidden;
+  border: 1px solid var(--vl-border);
+  box-shadow: 0 16px 44px color-mix(in srgb, var(--accent, #8b5cf6) 22%, rgba(0, 0, 0, 0.5));
+}
+.art {
+  width: 100%;
+  display: block;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.title {
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin: 0.2rem 0 0;
+}
+
+.tagline {
+  font-weight: 700;
+  margin: 0;
+}
+
+.stats {
+  display: flex;
+  gap: 0.8rem;
+  margin: 1rem 0;
+  flex-wrap: wrap;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 1rem;
+  border-radius: 12px;
+  background: var(--vl-surface);
+  border: 1px solid var(--vl-border);
+  color: var(--vl-gold);
+}
+.stat div {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+.stat strong {
+  color: var(--vl-text);
+  font-size: 1.1rem;
+}
+.stat span {
+  color: var(--vl-muted);
+  font-size: 0.78rem;
+}
+.coinIcon {
+  color: var(--vl-gold);
+}
+
+.playCta {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: #0b0616;
+  padding: 0.8rem 1.8rem;
+  border-radius: 999px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent, #ffc53d) 92%, white), var(--accent, #ffc53d));
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--accent, #ffc53d) 40%, transparent);
+  transition: transform 0.14s ease, filter 0.14s ease;
+}
+.playCta:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+}
+
+.locked {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--vl-muted);
+  background: var(--vl-surface);
+  border: 1px dashed var(--vl-border);
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  max-width: 46ch;
+}
+
+@media (max-width: 760px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .artWrap {
+    max-width: 320px;
+  }
+}

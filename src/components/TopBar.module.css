@@ -1,0 +1,88 @@
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(11, 6, 22, 0.82);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--vl-border);
+}
+
+.inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0.7rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 800;
+  font-size: 1.15rem;
+}
+
+.logoMark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--vl-violet), #6d28d9);
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(139, 92, 246, 0.45);
+}
+
+.logoText {
+  letter-spacing: -0.02em;
+}
+.logoAccent {
+  color: var(--vl-gold);
+}
+
+.nav {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 10px;
+  color: var(--vl-muted);
+  font-weight: 700;
+  font-size: 0.92rem;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.link:hover {
+  color: var(--vl-text);
+  background: var(--vl-surface);
+}
+.active {
+  color: var(--vl-text);
+  background: var(--vl-surface-2);
+}
+
+.walletBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+@media (max-width: 560px) {
+  .link span {
+    display: none;
+  }
+  .nav {
+    margin-left: 0;
+  }
+  .brand {
+    font-size: 1rem;
+  }
+}

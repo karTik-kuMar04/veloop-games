@@ -1,0 +1,62 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--vl-radius);
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--vl-surface), var(--vl-bg-2));
+  border: 1px solid var(--vl-border);
+  box-shadow: var(--vl-shadow);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--accent, #8b5cf6) 55%, var(--vl-border));
+  box-shadow: 0 16px 44px color-mix(in srgb, var(--accent, #8b5cf6) 22%, rgba(0, 0, 0, 0.5));
+}
+
+.art {
+  position: relative;
+  display: block;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+}
+
+.art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.35s ease;
+}
+
+.card:hover .art img {
+  transform: scale(1.04);
+}
+
+.playableTag,
+.cat {
+  position: absolute;
+  top: 0.6rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+}
+
+.playableTag {
+  left: 0.6rem;
+  color: #06210f;
+  background: linear-gradient(180deg, #4ade80, #22c55e);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.45);
+}
+
+.cat {
+  right: 0.6rem;
+  color: var(--vl-text);
+  background: rgba(11, 6, 22, 0.6);
+  border: 1px solid var(--vl-border);
+}
