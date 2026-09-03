@@ -1,0 +1,88 @@
+.wrap {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  padding: 0.9rem 0;
+  margin-bottom: 1.6rem;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    black 6%,
+    black 94%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    black 6%,
+    black 94%,
+    transparent 100%
+  );
+}
+
+.track {
+  display: flex;
+  gap: 0.6rem;
+  width: max-content;
+  animation: vl-marquee-drift 42s linear infinite;
+}
+
+.wrap:hover .track,
+.wrap:focus-within .track {
+  animation-play-state: paused;
+}
+
+@keyframes vl-marquee-drift {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    /* Exactly -50% because the list is rendered twice; this lands the
+       second copy precisely where the first started, with no seam. */
+    transform: translateX(-50%);
+  }
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  padding: 0.4rem 0.9rem 0.4rem 0.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--vl-border);
+  background: var(--vl-surface);
+  color: var(--vl-muted);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.chip:hover,
+.chip:focus-visible {
+  border-color: color-mix(in srgb, var(--accent, var(--vl-violet)) 55%, var(--vl-border));
+  color: var(--vl-text);
+  background: color-mix(in srgb, var(--accent, var(--vl-violet)) 10%, var(--vl-surface));
+}
+
+.icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid color-mix(in srgb, var(--accent, var(--vl-violet)) 60%, transparent);
+}
+
+.name {
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track {
+    animation: none;
+  }
+  .wrap {
+    overflow-x: auto;
+  }
+}

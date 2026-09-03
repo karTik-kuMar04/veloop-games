@@ -1,37 +1,125 @@
-.nav {
+/*
+  Concept: a floating dock, not a full-width bar. A gold "coin" — this is a
+  rewards app, so the sliding indicator is literally a coin, not a generic
+  pill — glides behind whichever tab is active and the icon sitting on top
+  of it flips to dark-on-gold, like it's been "claimed". Everything else
+  stays quiet: muted icons, no borders, no shadow soup.
+*/
+
+.dock {
   position: fixed;
-  bottom: 0;
   left: 0;
   right: 0;
+  bottom: 0;
   z-index: 50;
   display: flex;
   justify-content: center;
-  gap: 8px;
-  padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
-  background: rgba(11, 14, 20, 0.9);
-  backdrop-filter: blur(14px);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0 14px calc(14px + env(safe-area-inset-bottom));
+  pointer-events: none; /* only the track below should catch taps */
+}
+
+.track {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 6px;
+  border-radius: 22px;
+  background: rgba(15, 10, 26, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(18px);
+  pointer-events: auto;
+}
+
+.coin {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 0;
+  border-radius: 16px;
+  background: linear-gradient(155deg, #ffd76a 0%, #f5b301 55%, #d9930a 100%);
+  box-shadow:
+    0 6px 16px rgba(245, 179, 1, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -2px 3px rgba(150, 95, 0, 0.35);
+  transition: transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.3s ease;
+  will-change: transform;
 }
 
 .item {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 3px;
-  padding: 8px 22px;
-  border-radius: 12px;
-  color: var(--muted, #8b93a7);
+  min-width: 68px;
+  padding: 9px 18px;
+  border-radius: 16px;
+  color: var(--muted, #8b8398);
   text-decoration: none;
-  font-size: 0.72rem;
-  font-weight: 600;
-  transition: color 0.15s ease, background 0.15s ease;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  transition: color 0.25s ease, transform 0.25s ease;
+}
+
+.icon {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.item:hover .icon {
+  transform: translateY(-1px);
 }
 
 .item:hover {
-  color: var(--text, #e6e9f0);
+  color: var(--text, #e7e2f0);
 }
 
+/* Active state rides on top of the coin: icon + label darken so they read
+   clearly against the gold, and the icon gets a small confident lift. */
 .active {
-  color: var(--gold, #f5b301);
-  background: rgba(245, 179, 1, 0.12);
+  color: #2b1a00;
+}
+
+.active .icon {
+  transform: translateY(-1px) scale(1.04);
+}
+
+.active:hover {
+  color: #2b1a00;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .coin,
+  .icon,
+  .item {
+    transition: none;
+  }
+}
+
+/* Icon-only on the smallest phones: label hides, dock stays a tidy island
+   instead of stretching edge-to-edge. */
+@media (max-width: 359px) {
+  .label {
+    display: none;
+  }
+  .item {
+    min-width: 52px;
+    padding: 11px 16px;
+  }
+}
+
+/* From 600px up, TopBar's own centred nav pill takes over wayfinding —
+   this must match TopBar.module.css's mobile breakpoint (max-width: 599px)
+   exactly, so there is always exactly one nav surface on screen, never
+   both stacked and never neither. */
+@media (min-width: 600px) {
+  .dock {
+    display: none;
+  }
 }

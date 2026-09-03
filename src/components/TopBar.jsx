@@ -4,6 +4,12 @@ import { useWallet } from "../store/WalletContext"
 import CoinBadge from "./CoinBadge"
 import styles from "./TopBar.module.css"
 
+const NAV_ITEMS = [
+  { to: "/", label: "Home", icon: Home, end: true },
+  { to: "/games", label: "Games", icon: Gamepad2, end: false },
+  { to: "/redeem", label: "Redeem", icon: Gift, end: false },
+]
+
 export default function TopBar() {
   const { coins } = useWallet()
   const navigate = useNavigate()
@@ -20,15 +26,20 @@ export default function TopBar() {
           </span>
         </Link>
 
+        {/* Centred segmented nav — desktop/tablet only. Hidden on mobile;
+            BottomNav is the sole wayfinding surface there. */}
         <nav className={styles.nav} aria-label="Primary">
-          <NavLink to="/" end className={({ isActive }) => `${styles.link} ${isActive ? styles.active : ""}`}>
-            <Home size={16} />
-            <span>Home</span>
-          </NavLink>
-          <NavLink to="/redeem" className={({ isActive }) => `${styles.link} ${isActive ? styles.active : ""}`}>
-            <Gift size={16} />
-            <span>Redeem</span>
-          </NavLink>
+          {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              className={({ isActive }) => `${styles.link} ${isActive ? styles.active : ""}`}
+            >
+              <Icon size={16} strokeWidth={2.3} />
+              <span>{label}</span>
+            </NavLink>
+          ))}
         </nav>
 
         <button type="button" className={styles.walletBtn} onClick={() => navigate("/redeem")}>

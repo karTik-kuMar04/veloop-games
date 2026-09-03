@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react"
 import { GAMES } from "../data/games"
-import FeaturedCarousel from "../components/FeaturedCarousel"
+import GameMarquee from "../components/GameMarquee"
+import PlayableSpotlight from "../components/PlayableSpotlight"
 import BannerCard from "../components/BannerCard"
 import styles from "./Home.module.css"
 
@@ -9,12 +10,7 @@ const CATEGORIES = ["All", ...Array.from(new Set(GAMES.map((g) => g.category)))]
 export default function Home() {
   const [filter, setFilter] = useState("All")
 
-  const featured = useMemo(() => {
-    // Lead with the two playable games, then a few visually strong posters.
-    const playable = GAMES.filter((g) => g.playable)
-    const rest = GAMES.filter((g) => !g.playable).slice(0, 3)
-    return [...playable, ...rest]
-  }, [])
+  const playable = useMemo(() => GAMES.filter((g) => g.playable), [])
 
   const visible = useMemo(
     () => (filter === "All" ? GAMES : GAMES.filter((g) => g.category === filter)),
@@ -23,7 +19,9 @@ export default function Home() {
 
   return (
     <main className="vl-page">
-      <FeaturedCarousel games={featured} />
+      <GameMarquee games={GAMES} />
+
+      <PlayableSpotlight games={playable} />
 
       <div className={styles.head}>
         <div>
@@ -50,8 +48,8 @@ export default function Home() {
       </div>
 
       <div className={styles.grid}>
-        {visible.map((g) => (
-          <BannerCard key={g.id} game={g} />
+        {visible.map((g, i) => (
+          <BannerCard key={g.id} game={g} index={i} />
         ))}
       </div>
     </main>

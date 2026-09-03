@@ -7,12 +7,26 @@
   border: 1px solid var(--vl-border);
   box-shadow: var(--vl-shadow);
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  transform: perspective(800px) rotateX(var(--tiltX, 0deg)) rotateY(var(--tiltY, 0deg));
+  animation: vl-card-in 0.5s ease backwards;
+  animation-delay: var(--delay, 0ms);
 }
 
 .card:hover {
-  transform: translateY(-4px);
+  transform: perspective(800px) rotateX(var(--tiltX, 0deg)) rotateY(var(--tiltY, 0deg)) translateY(-4px);
   border-color: color-mix(in srgb, var(--accent, #8b5cf6) 55%, var(--vl-border));
   box-shadow: 0 16px 44px color-mix(in srgb, var(--accent, #8b5cf6) 22%, rgba(0, 0, 0, 0.5));
+}
+
+@keyframes vl-card-in {
+  from {
+    opacity: 0;
+    transform: perspective(800px) translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(800px) rotateX(var(--tiltX, 0deg)) rotateY(var(--tiltY, 0deg)) translateY(0);
+  }
 }
 
 .art {
@@ -59,4 +73,11 @@
   color: var(--vl-text);
   background: rgba(11, 6, 22, 0.6);
   border: 1px solid var(--vl-border);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation: none;
+    transform: none !important;
+  }
 }
