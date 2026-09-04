@@ -34,6 +34,9 @@ export function GameHome({ game, best, onStart, onGuide }) {
             alt=""
             className={styles.heroArt}
             aria-hidden="true"
+            width={800}
+            height={800}
+            decoding="async"
           />
 
           <div className={styles.artGlow} />

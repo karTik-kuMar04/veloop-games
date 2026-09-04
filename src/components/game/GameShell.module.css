@@ -1412,6 +1412,19 @@
   filter: blur(110px);
 }
 
+@media (max-width: 680px) {
+  .screen::before {
+    width: 280px;
+    height: 280px;
+    filter: blur(60px);
+  }
+
+  .artGlow {
+    filter: blur(28px);
+    box-shadow: none;
+  }
+}
+
 .artGlow {
   position: absolute;
   inset: 10%;

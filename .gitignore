@@ -1,6 +1,8 @@
 
 .vercel/
 
+dist/
+
 # Environment variables
 .env*.local
 
