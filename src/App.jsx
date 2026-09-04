@@ -43,11 +43,11 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/games" element={<Home />} />
           <Route path="/redeem" element={<Redeem />} />
-          <Route path="/game/:id" element={<GameDetail />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
       <BottomNav />
+      <Route path="/game/:id" element={<GameDetail />} />
     </div>
   )
 }
