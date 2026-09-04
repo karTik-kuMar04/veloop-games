@@ -24,7 +24,15 @@ export default function GameDetail() {
   return (
     <main className={styles.page}>
       <div className={styles.hero} style={{ "--accent": game.accent }}>
-        <img src={game.banner || "/placeholder.svg"} alt="" className={styles.heroImg} aria-hidden="true" />
+        <img
+          src={game.banner || "/placeholder.svg"}
+          alt=""
+          className={styles.heroImg}
+          aria-hidden="true"
+          width={1200}
+          height={1500}
+          decoding="async"
+        />
 
 
         <button type="button" className={styles.back} onClick={() => navigate(-1)}>

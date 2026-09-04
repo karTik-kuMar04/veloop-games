@@ -1,6 +1,7 @@
 .card {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   border-radius: var(--vl-radius);
   overflow: hidden;
   background: linear-gradient(180deg, var(--vl-surface), var(--vl-bg-2));
@@ -8,7 +9,7 @@
   box-shadow: var(--vl-shadow);
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   transform: perspective(800px) rotateX(var(--tiltX, 0deg)) rotateY(var(--tiltY, 0deg));
-  animation: vl-card-in 0.5s ease backwards;
+  animation: vl-card-in 0.5s ease both;
   animation-delay: var(--delay, 0ms);
 }
 
@@ -79,5 +80,37 @@
   .card {
     animation: none;
     transform: none !important;
+  }
+}
+
+/* Touch / narrow viewports: the perspective + entrance transform promotes
+   every poster into its own layer. WebKit restarts those animations while
+   scrolling, which is the "banner suddenly appears" flash. */
+@media (hover: none), (max-width: 720px) {
+  .card {
+    animation: none;
+    transform: none;
+  }
+  .card:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .playableTag,
+  .cat {
+    top: 0.4rem;
+    font-size: 0.62rem;
+    padding: 0.2rem 0.4rem;
+    max-width: calc(50% - 0.3rem);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .playableTag {
+    left: 0.4rem;
+  }
+  .cat {
+    right: 0.4rem;
   }
 }

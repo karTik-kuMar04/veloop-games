@@ -5,8 +5,10 @@
 .heading {
   display: flex;
   align-items: baseline;
+  flex-wrap: wrap;
   gap: 0.55rem;
   margin-bottom: 0.9rem;
+  min-width: 0;
 }
 
 .headingIcon {
@@ -19,12 +21,23 @@
   font-weight: 800;
   margin: 0;
   letter-spacing: -0.01em;
+  min-width: 0;
 }
 
 .headingSub {
   color: var(--vl-muted);
   font-size: 0.85rem;
   font-weight: 600;
+  min-width: 0;
+}
+
+@media (max-width: 420px) {
+  .headingSub {
+    flex: 1 1 100%;
+  }
+  .title {
+    font-size: 1.2rem;
+  }
 }
 
 .track {
@@ -32,9 +45,11 @@
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
   gap: 1.1rem;
+  min-width: 0;
 }
 
 .card {
+  min-width: 0;
   border-radius: var(--vl-radius, 18px);
   overflow: hidden;
   background: linear-gradient(180deg, var(--vl-surface), var(--vl-bg-2));
@@ -104,6 +119,7 @@
   margin: 0;
   color: var(--vl-text);
   letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
 }
 
 .tagline {
@@ -140,11 +156,15 @@
 @media (max-width: 720px) {
   .track {
     grid-auto-flow: column;
-    grid-auto-columns: 86%;
+    grid-auto-columns: min(86%, 100%);
     overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
     padding-bottom: 0.2rem;
+    touch-action: pan-x;
   }
   .track::-webkit-scrollbar {
     display: none;
@@ -154,5 +174,11 @@
   }
   .dots {
     display: flex;
+  }
+}
+
+@media (hover: none) {
+  .card:hover {
+    transform: none;
   }
 }

@@ -19,10 +19,11 @@ export default function PlayableSpotlight({ games }) {
 
   function handleScroll() {
     const el = trackRef.current
-    if (!el) return
+    if (!el || !games.length) return
     const cardWidth = el.scrollWidth / games.length
-    const idx = Math.round(el.scrollLeft / cardWidth)
-    setActive(Math.min(games.length - 1, Math.max(0, idx)))
+    if (!cardWidth) return
+    const idx = Math.min(games.length - 1, Math.max(0, Math.round(el.scrollLeft / cardWidth)))
+    setActive((prev) => (prev === idx ? prev : idx))
   }
 
   function goTo(i) {
@@ -50,7 +51,14 @@ export default function PlayableSpotlight({ games }) {
               onClick={() => navigate(`/game/${g.id}`)}
               aria-label={`${g.title} — ${g.tagline}`}
             >
-              <img src={g.banner || "/placeholder.svg"} alt="" className={styles.artImg} />
+              <img
+                src={g.banner || "/placeholder.svg"}
+                alt=""
+                className={styles.artImg}
+                width={1280}
+                height={720}
+                decoding="async"
+              />
               <div className={styles.artScrim} />
               <div className={styles.artContent}>
                 <span className={styles.category}>{g.category}</span>

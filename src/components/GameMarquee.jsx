@@ -28,7 +28,15 @@ export default function GameMarquee({ games }) {
             tabIndex={i < games.length ? 0 : -1}
             aria-hidden={i >= games.length}
           >
-            <img src={g.banner || "/placeholder.svg"} alt="" className={styles.icon} />
+            <img
+              src={g.banner || "/placeholder.svg"}
+              alt=""
+              className={styles.icon}
+              width={28}
+              height={28}
+              loading={i < games.length ? "eager" : "lazy"}
+              decoding="async"
+            />
             <span className={styles.name}>{g.title}</span>
           </button>
         ))}

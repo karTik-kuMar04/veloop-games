@@ -12,6 +12,8 @@
   position: sticky;
   top: 0;
   z-index: 50;
+  isolation: isolate;
+  padding-top: env(safe-area-inset-top);
   background: rgba(11, 6, 22, 0.82);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--vl-border);
@@ -131,9 +133,14 @@
 /* ---------- Mobile: nav pill removed, BottomNav owns wayfinding ---------- */
 
 @media (max-width: 599px) {
+  .bar {
+    /* Cheaper than a live 14px blur while the marquee + card grid scroll. */
+    background: rgba(11, 6, 22, 0.94);
+    backdrop-filter: blur(8px);
+  }
   .inner {
-    grid-template-columns: 1fr auto;
-    padding: 0.6rem 0.85rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 0.6rem max(0.85rem, env(safe-area-inset-right)) 0.6rem max(0.85rem, env(safe-area-inset-left));
   }
   .nav {
     display: none;

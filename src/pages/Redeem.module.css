@@ -1,7 +1,9 @@
 .page {
   max-width: 1120px;
   margin: 0 auto;
-  padding: 28px 20px 120px;
+  padding: 28px max(20px, env(safe-area-inset-right)) calc(120px + env(safe-area-inset-bottom))
+    max(20px, env(safe-area-inset-left));
+  min-width: 0;
 }
 
 .hero {
@@ -15,6 +17,7 @@
   background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(255, 255, 255, 0.03));
   border: 1px solid rgba(245, 158, 11, 0.22);
   margin-bottom: 28px;
+  min-width: 0;
 }
 
 .title {
@@ -54,7 +57,7 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
   gap: 18px;
 }
 
@@ -63,6 +66,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
   padding: 22px 20px;
   border-radius: 16px;
   background: var(--surface, #151a24);
@@ -135,7 +139,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-top: 10px;
+  min-width: 0;
 }
 
 .price {
@@ -162,6 +169,8 @@
   font-weight: 700;
   font-size: 0.85rem;
   cursor: pointer;
+  flex: 0 1 auto;
+  white-space: nowrap;
   background: var(--gold, #f5b301);
   color: #1a1300;
   transition: filter 0.15s ease, transform 0.1s ease;
@@ -229,7 +238,7 @@
 
 .toast {
   position: fixed;
-  bottom: 92px;
+  bottom: calc(92px + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -243,6 +252,8 @@
   box-shadow: 0 10px 30px rgba(34, 197, 94, 0.4);
   z-index: 60;
   animation: slideUp 0.3s ease;
+  max-width: calc(100% - 2rem);
+  box-sizing: border-box;
 }
 
 @keyframes slideUp {
@@ -253,5 +264,15 @@
   to {
     opacity: 1;
     transform: translate(-50%, 0);
+  }
+}
+
+@media (max-width: 520px) {
+  .hero {
+    padding: 1.15rem;
+  }
+  .walletCard,
+  .walletMeta {
+    align-items: flex-start;
   }
 }

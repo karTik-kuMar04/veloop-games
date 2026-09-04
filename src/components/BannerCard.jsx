@@ -39,7 +39,14 @@ export default function BannerCard({ game, index = 0 }) {
       onPointerLeave={handlePointerLeave}
     >
       <Link to={`/game/${game.id}`} className={styles.art} aria-label={`${game.title} — ${game.tagline}`}>
-        <img src={game.banner || "/placeholder.svg"} alt={`${game.title} poster`} loading="lazy" />
+        <img
+          src={game.banner || "/placeholder.svg"}
+          alt={`${game.title} poster`}
+          width={600}
+          height={800}
+          loading={index < 4 ? "eager" : "lazy"}
+          decoding="async"
+        />
         {game.playable && <span className={styles.playableTag}>Playable</span>}
         <span className={styles.cat}>{game.category}</span>
       </Link>

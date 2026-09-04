@@ -2,9 +2,16 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  height: 100svh;
   height: 100dvh;
+  max-height: 100dvh;
   background: radial-gradient(circle at 50% 0%, #2a1e0b 0%, #0b0e14 55%);
   overflow: hidden;
+  padding-top: env(safe-area-inset-top);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+  box-sizing: border-box;
 }
 
 .canvasWrap {
