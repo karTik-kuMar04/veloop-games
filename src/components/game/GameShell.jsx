@@ -1,8 +1,8 @@
-import { useNavigate } from "react-router-dom"
-import { ArrowLeft, BookOpen, Coins, Play, RotateCcw } from "lucide-react"
-import CoinBadge from "../CoinBadge"
-import { useWallet } from "../../store/WalletContext"
-import styles from "./GameShell.module.css"
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, BookOpen, Coins, Play, RotateCcw } from "lucide-react";
+import CoinBadge from "../CoinBadge";
+import { useWallet } from "../../store/WalletContext";
+import styles from "./GameShell.module.css";
 
 /**
  * Reusable flow wrapper for a fully playable game.
@@ -12,27 +12,83 @@ import styles from "./GameShell.module.css"
  */
 export function GameHome({ game, best, onStart, onGuide }) {
   const navigate = useNavigate()
+
   return (
-    <div className={styles.screen} style={{ "--accent": game.accent }}>
-      <button type="button" className={styles.back} onClick={() => navigate("/")}>
-        <ArrowLeft size={16} /> All games
+    <div
+      className={`${styles.screen}`}
+      style={{ "--accent": game.accent }}
+    >
+      <button
+        type="button"
+        className={styles.back}
+        onClick={() => navigate("/")}
+      >
+        <ArrowLeft size={17} />
+        <span>Home</span>
       </button>
+
       <div className={styles.hero}>
-        <img src={game.banner || "/placeholder.svg"} alt="" className={styles.heroArt} aria-hidden="true" />
+        <div className={styles.heroArtWrap}>
+          <img
+            src={game.banner || "/placeholder.svg"}
+            alt=""
+            className={styles.heroArt}
+            aria-hidden="true"
+          />
+
+          <div className={styles.artGlow} />
+        </div>
+
         <div className={styles.heroBody}>
-          <span className="vl-eyebrow">{game.category} · Fully playable</span>
-          <h1 className={styles.title}>{game.title}</h1>
-          <p className={styles.tagline}>{game.tagline}</p>
+          <div className={styles.heroMeta}>
+            <span className="vl-eyebrow">
+              {game.category}
+            </span>
+
+            <span className={styles.liveDot}>
+              <span />
+              Ready to play
+            </span>
+          </div>
+
+          <h1 className={styles.title}>
+            {game.title}
+          </h1>
+
+          <p className={styles.tagline}>
+            {game.tagline}
+          </p>
+
+          <p className={styles.short}>
+            {game.short}
+          </p>
+
           <div className={styles.best}>
-            <span>Best score</span>
+            <span>Personal best</span>
             <strong>{best.toLocaleString()}</strong>
           </div>
+
           <div className={styles.homeActions}>
-            <button type="button" className={styles.primary} onClick={onStart}>
-              <Play size={20} fill="currentColor" strokeWidth={0} /> Play
+            <button
+              type="button"
+              className={styles.primary}
+              onClick={onStart}
+            >
+              <Play
+                size={20}
+                fill="currentColor"
+                strokeWidth={0}
+              />
+              Play now
             </button>
-            <button type="button" className={styles.ghost} onClick={onGuide}>
-              <BookOpen size={18} /> How to play
+
+            <button
+              type="button"
+              className={styles.ghost}
+              onClick={onGuide}
+            >
+              <BookOpen size={18} />
+              How to play
             </button>
           </div>
         </div>
@@ -63,8 +119,9 @@ export function GameGuide({ game, steps, onStart, onBack }) {
         <div className={styles.coinNote}>
           <Coins size={18} />
           <span>
-            Earn <strong>1 Game Coin</strong> for every {game.coinsPer || "10"} points. Coins are shared across
-            every game and spendable in the Redeem center.
+            Earn <strong>1 Game Coin</strong> for every {game.coinsPer || "10"}{" "}
+            points. Coins are shared across every game and spendable in the
+            Redeem center.
           </span>
         </div>
         <button type="button" className={styles.primary} onClick={onStart}>
@@ -72,25 +129,47 @@ export function GameGuide({ game, steps, onStart, onBack }) {
         </button>
       </div>
     </div>
-  )
+  );
 }
 
-export function GameOver({ game, score, coinsEarned, isRevive, onRevive, onRetry, onHome }) {
-  const { coins } = useWallet()
+export function GameOver({
+  game,
+  score,
+  coinsEarned,
+  isRevive,
+  onRevive,
+  onRetry,
+  onHome,
+}) {
+  const { coins } = useWallet();
   return (
     <div className={styles.overlay}>
       <div className={styles.overCard} style={{ "--accent": game.accent }}>
-        <span className="vl-eyebrow">{isRevive ? "You can continue!" : "Run complete"}</span>
-        <h2 className={styles.overTitle}>{isRevive ? "One more life?" : "Game Over"}</h2>
+        <span className="vl-eyebrow">
+          {isRevive ? "🔥 Last chance" : "Run complete"}
+        </span>
+        <h2 className={styles.overTitle}>
+          {isRevive ? "Keep the run alive?" : "Nice run!"}
+        </h2>
+
+        <div className={styles.finalScore}>
+          <span>FINAL SCORE</span>
+          <strong>{score.toLocaleString()}</strong>
+        </div>
 
         <div className={styles.overStats}>
           <div>
-            <span>Score</span>
-            <strong>{score.toLocaleString()}</strong>
-          </div>
-          <div>
             <span>Coins earned</span>
-            <strong className={styles.coinValue}>+{coinsEarned}</strong>
+            <strong className={styles.coinValue}>
+              +{coinsEarned}
+            </strong>
+          </div>
+
+          <div>
+            <span>Best</span>
+            <strong>
+              {Math.max(score, 0).toLocaleString()}
+            </strong>
           </div>
         </div>
 
@@ -100,11 +179,23 @@ export function GameOver({ game, score, coinsEarned, isRevive, onRevive, onRetry
 
         {isRevive ? (
           <div className={styles.overActions}>
-            <button type="button" className={styles.reviveBtn} onClick={onRevive}>
+            <button
+              type="button"
+              className={styles.reviveBtn}
+              onClick={onRevive}
+            >
               <RotateCcw size={18} /> Revive (50 coins)
             </button>
             <button type="button" className={styles.ghost} onClick={onRetry}>
               No thanks, restart
+            </button>
+            <button
+              type="button"
+              className={styles.quitBtn}
+              onClick={onHome}
+            >
+              <ArrowLeft size={17} />
+              Quit game
             </button>
           </div>
         ) : (
@@ -112,28 +203,43 @@ export function GameOver({ game, score, coinsEarned, isRevive, onRevive, onRetry
             <button type="button" className={styles.primary} onClick={onRetry}>
               <RotateCcw size={18} /> Play again
             </button>
-            <button type="button" className={styles.ghost} onClick={onHome}>
-              Back to game home
+            <button
+              type="button"
+              className={styles.ghost}
+              onClick={onHome}
+            >
+              <ArrowLeft size={17} />
+              Quit game
             </button>
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }
 
 export function GameHud({ game, score, extra, onQuit }) {
   return (
-    <div className={styles.hud}>
-      <button type="button" className={styles.hudBtn} onClick={onQuit} aria-label="Quit game">
-        <ArrowLeft size={16} />
+    <>
+      <button
+        type="button"
+        className={styles.cornerQuit}
+        onClick={onQuit}
+        aria-label="Quit game"
+      >
+        <ArrowLeft size={20} strokeWidth={2.5} />
       </button>
-      <div className={styles.hudScore}>
-        <span>Score</span>
-        <strong>{score.toLocaleString()}</strong>
+
+      <div className={styles.hud}>
+        <div className={styles.hudGame}>{game.title}</div>
+
+        <div className={styles.hudScore}>
+          <span>Score</span>
+          <strong>{score.toLocaleString()}</strong>
+        </div>
+
+        {extra}
       </div>
-      {extra}
-      <div className={styles.hudGame}>{game.title}</div>
-    </div>
-  )
+    </>
+  );
 }

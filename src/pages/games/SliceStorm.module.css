@@ -70,3 +70,47 @@
     opacity: 0;
   }
 }
+
+/* --- Countdown overlay (3, 2, 1, Go!) shown before a fresh run starts --- */
+
+.countdownWrap {
+  flex: 1;
+  display: grid;
+  place-items: center;
+}
+
+.countdownNumber {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(4.5rem, 22vw, 9rem);
+  color: var(--accent, #f59e0b);
+  text-shadow: 0 0 40px color-mix(in srgb, var(--accent, #f59e0b) 65%, transparent);
+  /* key={countdownValue} on the element in JSX forces a fresh mount for
+     every number change, which re-triggers this animation each time
+     rather than only playing once on the very first render. */
+  animation: countdown-pop 0.72s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+@keyframes countdown-pop {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  40% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  70% {
+    transform: scale(0.96);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .countdownNumber {
+    animation: none;
+  }
+}

@@ -1,101 +1,185 @@
+/*
+  Two deliberately different layouts, not one squeezed into the other:
+
+  MOBILE  — art is a short top banner (no overlaid text; too cramped at
+            this width to read reliably over an image), everything below
+            stacks centered, CTA is full-width and sits at a fixed point
+            in the flow so it never drifts depending on copy length.
+
+  DESKTOP — full-bleed cinematic hero: fixed aspect-ratio image with a
+            gradient scrim in the game's own accent color, title/tagline
+            overlaid bottom-left inside a contained max-width column so
+            it lines up with the page's own margins, not the image's.
+
+  The old bug ("image not centered / uneven") came from a fixed 380px art
+  column with no aspect-ratio control — different poster shapes produced
+  different box heights next to text, so nothing lined up consistently.
+  Fixed aspect-ratio + object-fit: cover removes that variable entirely.
+*/
+
+.page {
+  padding-bottom: 3rem;
+}
+
+/* ---------------- Hero ---------------- */
+
+.hero {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: #120a1f;
+}
+
+.heroImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(11, 6, 22, 0.15) 0%, rgba(11, 6, 22, 0.35) 45%, rgba(11, 6, 22, 0.96) 100%),
+    linear-gradient(0deg, color-mix(in srgb, var(--accent, #8b5cf6) 30%, transparent) 0%, transparent 55%);
+}
+
 .back {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 2;
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  background: var(--vl-surface);
-  border: 1px solid var(--vl-border);
-  color: var(--vl-muted);
+  background: rgba(11, 6, 22, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--vl-text);
   font-weight: 700;
-  padding: 0.4rem 0.8rem;
-  border-radius: 10px;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
   cursor: pointer;
-  margin-bottom: 1.2rem;
+  backdrop-filter: blur(8px);
 }
 .back:hover {
-  color: var(--vl-text);
+  background: rgba(11, 6, 22, 0.75);
 }
 
-.layout {
-  display: grid;
-  grid-template-columns: minmax(0, 380px) 1fr;
-  gap: 2rem;
-  align-items: start;
-}
-
-.artWrap {
-  border-radius: var(--vl-radius);
-  overflow: hidden;
-  border: 1px solid var(--vl-border);
-  box-shadow: 0 16px 44px color-mix(in srgb, var(--accent, #8b5cf6) 22%, rgba(0, 0, 0, 0.5));
-}
-.art {
-  width: 100%;
-  display: block;
-}
-
-.info {
+.heroContent {
+  position: relative;
+  z-index: 1;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  justify-content: flex-end;
+  padding: 1.5rem 1.25rem;
+  text-align: center;
+}
+
+.eyebrow {
+  color: color-mix(in srgb, var(--accent, #f5b301) 70%, white);
+  font-weight: 800;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
 }
 
 .title {
-  font-size: clamp(2rem, 5vw, 3rem);
+  font-size: clamp(1.8rem, 8vw, 2.4rem);
   font-weight: 800;
   letter-spacing: -0.03em;
-  margin: 0.2rem 0 0;
+  margin: 0.25rem 0 0.35rem;
+  color: var(--vl-text);
 }
 
 .tagline {
   font-weight: 700;
+  color: var(--vl-muted);
   margin: 0;
 }
 
-.stats {
+/* ---------------- Body (mobile default: centered stack) ---------------- */
+
+.body {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 0;
   display: flex;
-  gap: 0.8rem;
-  margin: 1rem 0;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.short {
+  color: var(--vl-muted);
+  margin: 0 0 1.25rem;
+  max-width: 50ch;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+  width: 100%;
+  margin-bottom: 1.5rem;
 }
 
 .stat {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.6rem;
-  padding: 0.7rem 1rem;
-  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
   background: var(--vl-surface);
   border: 1px solid var(--vl-border);
-  color: var(--vl-gold);
 }
-.stat div {
+.statText {
   display: flex;
   flex-direction: column;
-  line-height: 1.1;
+  align-items: flex-start;
+  line-height: 1.15;
 }
 .stat strong {
   color: var(--vl-text);
-  font-size: 1.1rem;
+  font-size: 1.05rem;
 }
 .stat span {
   color: var(--vl-muted);
-  font-size: 0.78rem;
+  font-size: 0.75rem;
 }
 .coinIcon {
   color: var(--vl-gold);
+  flex-shrink: 0;
+}
+.trophyIcon {
+  color: color-mix(in srgb, var(--vl-violet, #8b5cf6) 70%, white);
+  flex-shrink: 0;
+}
+
+/* CTA sits in its own fixed row so its position never depends on how long
+   the tagline or description happens to run. Full width on mobile — the
+   dominant action gets the full thumb-reach target. */
+.ctaRow {
+  width: 100%;
 }
 
 .playCta {
-  align-self: flex-start;
+  width: 100%;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   border: none;
   cursor: pointer;
   font-weight: 800;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   color: #0b0616;
-  padding: 0.8rem 1.8rem;
+  padding: 0.95rem 1.5rem;
   border-radius: 999px;
   background: linear-gradient(180deg, color-mix(in srgb, var(--accent, #ffc53d) 92%, white), var(--accent, #ffc53d));
   box-shadow: 0 10px 26px color-mix(in srgb, var(--accent, #ffc53d) 40%, transparent);
@@ -114,15 +198,87 @@
   background: var(--vl-surface);
   border: 1px dashed var(--vl-border);
   border-radius: 12px;
-  padding: 0.8rem 1rem;
-  max-width: 46ch;
+  padding: 0.85rem 1rem;
+  text-align: left;
 }
 
-@media (max-width: 760px) {
-  .layout {
-    grid-template-columns: 1fr;
+/* ---------------- Tablet ---------------- */
+
+@media (min-width: 640px) {
+  .hero {
+    aspect-ratio: 16 / 7;
   }
-  .artWrap {
-    max-width: 320px;
+  .heroContent {
+    padding: 2rem;
+  }
+}
+
+/* ---------------- Desktop: hero content moves to overlaid bottom-left,
+   body switches from centered stack to a left-aligned two-column row so
+   the CTA sits beside the stats instead of stacked under them. ---------------- */
+
+@media (min-width: 900px) {
+  .hero {
+    aspect-ratio: 21 / 8;
+    min-height: 320px;
+  }
+
+  .heroContent {
+    max-width: 1180px;
+    margin: 0 auto;
+    width: 100%;
+    align-items: flex-start;
+    text-align: left;
+    padding: 2.5rem;
+  }
+
+  .back {
+    top: 1.5rem;
+    left: calc((100% - 1180px) / 2 + 1.5rem);
+  }
+
+  .title {
+    font-size: clamp(2.4rem, 3.4vw, 3.2rem);
+  }
+
+  .body {
+    max-width: 1180px;
+    padding: 2rem 2.5rem 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    text-align: left;
+  }
+
+  .short {
+    margin: 0;
+    max-width: 42ch;
+    flex-shrink: 1;
+  }
+
+  .stats {
+    grid-template-columns: auto auto;
+    width: auto;
+    margin-bottom: 0;
+    flex-shrink: 0;
+  }
+
+  .stat {
+    justify-content: flex-start;
+    padding: 0.75rem 1.1rem;
+  }
+
+  .ctaRow {
+    width: auto;
+    flex-shrink: 0;
+  }
+
+  .playCta {
+    width: auto;
+  }
+
+  .locked {
+    max-width: 36ch;
   }
 }

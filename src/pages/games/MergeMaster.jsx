@@ -255,7 +255,7 @@ export default function MergeMaster() {
 
   return (
     <div className={styles.stage} style={{ "--accent": GAME.accent }}>
-      <GameHud game={GAME} score={score} onQuit={() => setScreen("home")} />
+      <GameHud game={GAME} score={score} />
 
       <div className={styles.boardWrap}>
         <div

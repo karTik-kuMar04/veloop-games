@@ -85,17 +85,38 @@ function lerp(a, b, t) {
   return a + (b - a) * t
 }
 
+// ---------------------------------------------------------------------------
+// Haptics: navigator.vibrate() only exists on Chromium-based mobile browsers
+// (Android Chrome, Samsung Internet, etc.) — iOS Safari and desktop browsers
+// never implemented it and Safari's vendor position is to not support it, so
+// this must feature-detect and silently no-op everywhere it's unavailable
+// rather than throw. It also requires a real user gesture in the same event
+// tick to fire at all, which both call sites below satisfy (a pointer-down
+// slice handler, and a run-ending event that itself always originates from
+// a slice or a spawn-triggered miss check inside that same handler chain).
+function vibrate(pattern) {
+  if (typeof navigator === "undefined" || typeof navigator.vibrate !== "function") return
+  const prefersReducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  if (prefersReducedMotion) return
+  navigator.vibrate(pattern)
+}
+
 export default function SliceStorm() {
   const { earn, recordScore, bestScores, coins, spend } = useWallet()
-  const [screen, setScreen] = useState("home") // home | guide | playing | revive | over
+  const [screen, setScreen] = useState("home") // home | guide | countdown | playing | revive | over
   const [score, setScore] = useState(0)
   const [lives, setLives] = useState(START_LIVES)
   const [combo, setCombo] = useState(0)
   const [coinsEarned, setCoinsEarned] = useState(0)
+  const [countdownValue, setCountdownValue] = useState(3) // 3, 2, 1, then "Go!"
 
   const canvasRef = useRef(null)
   const rafRef = useRef(0)
   const stateRef = useRef(null)
+  const goTimeoutRef = useRef(null) // pending "Go!" -> "playing" timeout during countdown
 
   function freshState() {
     return {
@@ -120,13 +141,19 @@ export default function SliceStorm() {
   const best = bestScores[GAME.id] || 0
 
   const endRun = useCallback(
-    (finalScore, viaRevive) => {
+    (finalScore, viaRevive, opts = {}) => {
       cancelAnimationFrame(rafRef.current)
       stateRef.current.running = false
       const earnedCoins = Math.floor(finalScore * COINS_PER_POINT)
       setCoinsEarned(earnedCoins)
       if (earnedCoins > 0) earn(earnedCoins, `Slice Storm · ${finalScore} pts`, GAME.xp)
       recordScore(GAME.id, finalScore)
+      // Longer single buzz for "the run just ended" — distinct from the
+      // shorter double-pulse used for a bomb hit specifically, so a life
+      // lost to a missed fruit (no bomb pulse) still gets its own cue.
+      // Skipped when the caller already fired a bomb-hit vibration in the
+      // same tick, since vibrate() replaces rather than queues patterns.
+      if (!opts.skipVibration) vibrate(120)
       setScreen(viaRevive ? "over" : "revive")
     },
     [earn, recordScore],
@@ -456,6 +483,9 @@ export default function SliceStorm() {
     }
     s.shake = Math.max(s.shake, 14 * dpr)
     s.flash = 1
+    // Short double-pulse: reads as a sharp "impact" distinct from the
+    // longer single buzz used for the run actually ending (see endRun).
+    vibrate([40, 40, 60])
   }
 
   // ---------------------------------------------------------------------
@@ -676,6 +706,35 @@ export default function SliceStorm() {
     }
   }, [screen, startLoop])
 
+  // 3-2-1-Go countdown, shown before a fresh run starts. Kept as its own
+  // screen/effect entirely separate from startLoop — the canvas game loop
+  // only ever starts once `screen` becomes "playing", so no fruit spawns
+  // or physics run during the countdown itself. A revive skips this and
+  // goes straight back to "playing" (see handleRevive), since interrupting
+  // a continue with a countdown reads as a penalty, not a courtesy.
+  useEffect(() => {
+    if (screen !== "countdown") return
+    setCountdownValue(3)
+    let value = 3
+    const tick = window.setInterval(() => {
+      value -= 1
+      if (value <= 0) {
+        window.clearInterval(tick)
+        setCountdownValue("Go!")
+        goTimeoutRef.current = window.setTimeout(() => setScreen("playing"), 500)
+        return
+      }
+      setCountdownValue(value)
+    }, 800)
+    return () => {
+      window.clearInterval(tick)
+      if (goTimeoutRef.current) {
+        window.clearTimeout(goTimeoutRef.current)
+        goTimeoutRef.current = null
+      }
+    }
+  }, [screen])
+
   // pointer slicing
   const handlePointer = useCallback(
     (clientX, clientY) => {
@@ -701,7 +760,15 @@ export default function SliceStorm() {
             s.lives -= 1
             setLives(s.lives)
             if (s.lives <= 0) {
-              endRun(s.score, false)
+              // A bomb-hit vibration was already fired inside bombBurst
+              // above, and endRun below would normally fire its own
+              // separate "run ended" buzz — but navigator.vibrate()
+              // cancels and replaces any in-progress pattern rather than
+              // queuing after it, so calling both back-to-back here would
+              // just truncate the first into an inaudible stub. Skip
+              // endRun's vibration in this specific case and let the
+              // bomb's own pulse play out in full instead.
+              endRun(s.score, false, { skipVibration: true })
               return
             }
           } else {
@@ -744,7 +811,7 @@ export default function SliceStorm() {
     setLives(START_LIVES)
     setCombo(0)
     setCoinsEarned(0)
-    setScreen("playing")
+    setScreen("countdown")
   }
 
   function handleRevive() {
@@ -772,6 +839,17 @@ export default function SliceStorm() {
   }
   if (screen === "guide") {
     return <GameGuide game={{ ...GAME, coinsPer: "5" }} steps={GUIDE} onStart={beginRun} onBack={() => setScreen("home")} />
+  }
+  if (screen === "countdown") {
+    return (
+      <div className={styles.stage} style={{ "--accent": GAME.accent }}>
+        <div className={styles.countdownWrap}>
+          <div key={countdownValue} className={styles.countdownNumber}>
+            {countdownValue}
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
