@@ -255,14 +255,10 @@ export default function MergeMaster() {
 
   return (
     <div className={styles.stage} style={{ "--accent": GAME.accent }}>
-      <GameHud 
-        game={GAME} 
-        score={score} 
-        onQuit={() => {
-          cancelAnimationFrame(rafRef.current)
-          stateRef.current.running = false
-          setScreen("home")
-        }}
+      <GameHud
+        game={GAME}
+        score={score}
+        onQuit={() => setScreen("home")}
       />
 
       <div className={styles.boardWrap}>
