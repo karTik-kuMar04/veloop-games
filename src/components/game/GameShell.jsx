@@ -203,7 +203,7 @@ export function GameOver({
           </div>
         ) : (
           <div className={styles.overActions}>
-            <button type="button" className={styles.primary} onClick={onRetry}>
+            <button type="button" className={styles.ghost} onClick={onRetry}>
               <RotateCcw size={18} /> Play again
             </button>
             <button
