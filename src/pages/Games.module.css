@@ -1,0 +1,801 @@
+.page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 1.5rem max(1rem, env(safe-area-inset-left)) calc(6rem + env(safe-area-inset-bottom))
+    max(1rem, env(safe-area-inset-right));
+  display: flex;
+  flex-direction: column;
+  gap: 2.25rem;
+}
+
+/* Header Section */
+.hero {
+  position: relative;
+  border-radius: var(--vl-radius);
+  background: linear-gradient(135deg, rgba(26, 16, 48, 0.95), rgba(19, 10, 38, 0.95));
+  border: 1px solid var(--vl-border);
+  padding: 2.25rem 2rem;
+  overflow: hidden;
+  box-shadow: var(--vl-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.heroGlow {
+  position: absolute;
+  top: -40%;
+  right: -10%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.25) 0%, rgba(255, 197, 61, 0.1) 45%, transparent 70%);
+  filter: blur(50px);
+  pointer-events: none;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 1;
+  max-width: 750px;
+}
+
+.heroEyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--vl-gold);
+  margin-bottom: 0.5rem;
+}
+
+.heroEyebrowIcon {
+  color: var(--vl-gold);
+}
+
+.heroTitle {
+  font-size: clamp(1.8rem, 4vw, 2.75rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  color: var(--vl-text);
+  margin: 0 0 0.75rem;
+}
+
+.heroTitleAccent {
+  background: linear-gradient(135deg, var(--vl-gold) 0%, #ff8a3d 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.heroDesc {
+  color: var(--vl-muted);
+  font-size: 1.02rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* Feature stats pills */
+.statsPills {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+}
+
+.statPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.95rem;
+  background: rgba(36, 22, 64, 0.65);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: 999px;
+  font-size: 0.84rem;
+  color: var(--vl-text);
+  backdrop-filter: blur(8px);
+}
+
+.statPillIcon {
+  color: var(--vl-gold);
+}
+
+/* Filter / Tabs */
+.filterBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.filterTabs {
+  display: flex;
+  gap: 0.5rem;
+  background: var(--vl-surface);
+  border: 1px solid var(--vl-border);
+  padding: 0.35rem;
+  border-radius: 999px;
+}
+
+.filterBtn {
+  border: none;
+  background: transparent;
+  color: var(--vl-muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 0.45rem 1.1rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.filterBtn:hover {
+  color: var(--vl-text);
+}
+
+.filterBtnActive {
+  background: linear-gradient(135deg, var(--vl-violet), #6d28d9);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.4);
+}
+
+.gamesCount {
+  font-size: 0.85rem;
+  color: var(--vl-muted);
+  font-weight: 600;
+}
+
+/* Playable Game Detailed Cards */
+.gamesList {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.gameCard {
+  position: relative;
+  background: linear-gradient(180deg, var(--vl-surface) 0%, var(--vl-bg-2) 100%);
+  border: 1px solid var(--vl-border);
+  border-radius: calc(var(--vl-radius) * 1.25);
+  overflow: hidden;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.gameCard:hover {
+  border-color: color-mix(in srgb, var(--accent, var(--vl-violet)) 60%, var(--vl-border));
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.5), 0 0 30px color-mix(in srgb, var(--accent, var(--vl-violet)) 15%, transparent);
+}
+
+/* Game Top Hero Banner within Card */
+.cardBanner {
+  position: relative;
+  width: 100%;
+  min-height: 280px;
+  max-height: 380px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  padding: 2rem;
+  background: #0d071c;
+}
+
+.bannerImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.5s ease;
+  filter: brightness(0.85) contrast(1.05);
+}
+
+.gameCard:hover .bannerImg {
+  transform: scale(1.03);
+}
+
+.bannerScrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(11, 6, 22, 0.2) 0%,
+    rgba(11, 6, 22, 0.6) 40%,
+    rgba(11, 6, 22, 0.96) 100%
+  );
+}
+
+.bannerAccentGlow {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 60%;
+  height: 100%;
+  background: radial-gradient(circle at 80% 20%, color-mix(in srgb, var(--accent, var(--vl-violet)) 40%, transparent) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.bannerContent {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.bannerTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.badgesGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.categoryBadge {
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  backdrop-filter: blur(8px);
+}
+
+.liveBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(34, 197, 94, 0.18);
+  border: 1px solid rgba(34, 197, 94, 0.45);
+  color: #4ade80;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.liveDot {
+  width: 7px;
+  height: 7px;
+  background: #22c55e;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #22c55e;
+  animation: pulse 1.8s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+}
+
+.controlsPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--vl-muted);
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid var(--vl-border);
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+}
+
+.cardTitle {
+  font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.1;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.cardTagline {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--accent, var(--vl-gold));
+  margin: 0;
+}
+
+.cardShort {
+  font-size: 0.95rem;
+  color: #d1c9e8;
+  margin: 0;
+  max-width: 650px;
+}
+
+/* Card Body with Rules, Rewards & Action */
+.cardBody {
+  padding: 1.75rem 2rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+/* Performance & Highlights Bar */
+.highlightsBar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  padding: 1.1rem;
+  background: rgba(36, 22, 64, 0.45);
+  border: 1px solid var(--vl-border);
+  border-radius: calc(var(--vl-radius) * 0.8);
+}
+
+.highlightItem {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.highlightIconWrap {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 197, 61, 0.12);
+  color: var(--vl-gold);
+  border: 1px solid rgba(255, 197, 61, 0.25);
+  flex-shrink: 0;
+}
+
+.highlightMeta {
+  display: flex;
+  flex-direction: column;
+}
+
+.highlightMeta span {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--vl-muted);
+  font-weight: 600;
+}
+
+.highlightMeta strong {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--vl-text);
+}
+
+/* Section Grid (Rules & Rewards columns) */
+.sectionGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.75rem;
+}
+
+@media (max-width: 860px) {
+  .sectionGrid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+.blockCard {
+  background: rgba(26, 16, 48, 0.6);
+  border: 1px solid var(--vl-border);
+  border-radius: var(--vl-radius);
+  padding: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.blockHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.blockTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--vl-text);
+  margin: 0;
+}
+
+.blockTitleIcon {
+  color: var(--accent, var(--vl-gold));
+}
+
+.blockBadge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--vl-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Rules List */
+.rulesList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ruleItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  background: rgba(36, 22, 64, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 0.15s ease;
+}
+
+.ruleItem:hover {
+  background: rgba(36, 22, 64, 0.65);
+}
+
+.ruleNumber {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent, var(--vl-violet));
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.ruleText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.ruleText strong {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--vl-text);
+}
+
+.ruleText p {
+  font-size: 0.82rem;
+  color: var(--vl-muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Rewards Grid */
+.rewardsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+@media (max-width: 480px) {
+  .rewardsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rewardItem {
+  padding: 0.75rem 0.85rem;
+  background: rgba(36, 22, 64, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.rewardHighlight {
+  background: rgba(255, 197, 61, 0.08);
+  border-color: rgba(255, 197, 61, 0.25);
+}
+
+.rewardLabel {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--vl-muted);
+  font-weight: 600;
+}
+
+.rewardValue {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--vl-text);
+}
+
+.rewardHighlight .rewardValue {
+  color: var(--vl-gold);
+}
+
+.rewardsCallout {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 0.85rem;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 10px;
+  font-size: 0.8rem;
+  color: #d8b4fe;
+  line-height: 1.35;
+}
+
+.rewardsCalloutIcon {
+  color: var(--vl-gold);
+  flex-shrink: 0;
+}
+
+/* Action Footer */
+.cardActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--vl-border);
+}
+
+.actionButtons {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.playBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1.75rem;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, var(--accent, var(--vl-gold)), color-mix(in srgb, var(--accent, var(--vl-gold)) 80%, #000));
+  color: #0b0616;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--accent, var(--vl-gold)) 40%, transparent);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+}
+
+.playBtn:hover {
+  transform: translateY(-2px) scale(1.02);
+  filter: brightness(1.1);
+  box-shadow: 0 6px 26px color-mix(in srgb, var(--accent, var(--vl-gold)) 60%, transparent);
+}
+
+.playBtn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.detailBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.4rem;
+  border-radius: 999px;
+  background: rgba(36, 22, 64, 0.8);
+  border: 1px solid var(--vl-border);
+  color: var(--vl-text);
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.detailBtn:hover {
+  background: var(--vl-surface-2);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.actionNote {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+  color: var(--vl-muted);
+  font-weight: 600;
+}
+
+.xpBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: rgba(255, 197, 61, 0.15);
+  border: 1px solid rgba(255, 197, 61, 0.3);
+  color: var(--vl-gold);
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+/* Coming Soon Shelf Section */
+.catalogSection {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.catalogHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.catalogTitle {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--vl-text);
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.catalogGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.1rem;
+}
+
+.catalogCard {
+  background: var(--vl-surface);
+  border: 1px solid var(--vl-border);
+  border-radius: var(--vl-radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+  position: relative;
+}
+
+.catalogCard:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.catalogCardImgWrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000000;
+  overflow: hidden;
+}
+
+.catalogCardImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(0.2) brightness(0.9);
+  transition: transform 0.3s ease;
+}
+
+.catalogCard:hover .catalogCardImg {
+  transform: scale(1.05);
+}
+
+.catalogLockBadge {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  background: rgba(0, 0, 0, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--vl-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  backdrop-filter: blur(6px);
+}
+
+.catalogCardBody {
+  padding: 0.95rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.catalogCardCategory {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--vl-gold);
+  font-weight: 700;
+}
+
+.catalogCardTitle {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--vl-text);
+  margin: 0;
+}
+
+.catalogCardShort {
+  font-size: 0.8rem;
+  color: var(--vl-muted);
+  margin: 0;
+  line-height: 1.35;
+}
+
+@media (max-width: 640px) {
+  .hero {
+    padding: 1.5rem 1.25rem;
+  }
+  .cardBanner {
+    min-height: 240px;
+    padding: 1.25rem;
+  }
+  .cardBody {
+    padding: 1.25rem;
+    gap: 1.25rem;
+  }
+  .highlightsBar {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  .cardActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .actionButtons {
+    flex-direction: column;
+    width: 100%;
+  }
+  .playBtn,
+  .detailBtn {
+    width: 100%;
+  }
+}

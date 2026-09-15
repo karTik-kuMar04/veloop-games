@@ -5,6 +5,7 @@ import TopBar from "./components/TopBar"
 import BottomNav from "./components/BottomNav"
 
 import Home from "./pages/Home"
+import Games from "./pages/Games"
 import Redeem from "./pages/Redeem"
 import GameDetail from "./pages/GameDetail"
 
@@ -56,7 +57,7 @@ export default function App() {
       <div className="vl-content">
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/games" element={<Home />} />
+          <Route path="/games" element={<Games />} />
           <Route path="/redeem" element={<Redeem />} />
           <Route path="/game/:id" element={<GameDetail />} />
           <Route path="*" element={<Navigate to="/" replace />} />
