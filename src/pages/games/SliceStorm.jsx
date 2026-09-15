@@ -510,8 +510,18 @@ export default function SliceStorm() {
 
     function spawn(w, h) {
       const isBomb = Math.random() < 0.16
-      const x = rand(w * 0.15, w * 0.85)
-      const r = rand(38, 54)
+      // Spawn kept toward the middle third of the width (was 0.15-0.85,
+      // i.e. nearly edge-to-edge) so fruit starts closer to center and has
+      // much less horizontal distance left to travel before it could ever
+      // reach the side of the screen.
+      const x = rand(w * 0.35, w * 0.65)
+      // Radius scaled off the smaller canvas dimension instead of a fixed
+      // pixel range (was rand(38, 54), sized for a narrow phone canvas and
+      // proportionally tiny on a wide desktop/web canvas). ~9%-13% of
+      // min(w, h) keeps fruit a consistent, comfortably tappable size
+      // across phone and desktop alike.
+      const minDim = Math.min(w, h)
+      const r = rand(minDim * 0.06, minDim * 0.09)
       // Sized for the largest consumer: the orange dimple-texture loop reads
       // up to index (22 * 2 + 1) = 43, so this needs at least 44 entries.
       // The kiwi-seed loop indexes with modulo, so it's safe at any size.
@@ -520,7 +530,7 @@ export default function SliceStorm() {
         x,
         y: 0,
         r,
-        vx: rand(-0.06, 0.06),
+        vx: 0,
         vyReal: 0,
         color: null,
         bomb: isBomb,
@@ -579,9 +589,18 @@ export default function SliceStorm() {
       for (const o of s.objects) {
         if (o.vyReal === 0) {
           o.y = h + o.r
-          o.vyReal = -rand(0.75, 0.95) * dpr
           o.vx = rand(-0.2, 0.2) * dpr
           o.launchX = o.x
+          // Scale launch speed to actual canvas height so fruit reliably
+          // reaches the upper portion of the stage on every screen size,
+          // instead of a fixed velocity that only cleared ~240px regardless
+          // of how tall the canvas actually was. Using v = sqrt(2 * g * d)
+          // for the desired peak height d (a random 55%-80% of the stage,
+          // so arcs still vary run to run rather than all peaking at the
+          // same line).
+          const gravityPerMs = 0.0015 * dpr
+          const targetHeight = rand(0.55, 0.8) * h
+          o.vyReal = -Math.sqrt(2 * gravityPerMs * targetHeight)
         }
         o.vyReal += 0.0015 * dpr * dt
         o.y += o.vyReal * dt
@@ -815,16 +834,42 @@ export default function SliceStorm() {
   }
 
   function handleRevive() {
-    if (!spend(REVIVE_COST, "Revive · Slice Storm")) return
+    const ok = spend(REVIVE_COST, "Revive · Slice Storm")
+    if (!ok) return
+
     const s = stateRef.current
     s.objects = []
     s.halves = []
     s.particles = []
     s.popups = []
+    s.blade = []
     s.lives = 1
-    s.running = false
+    s.lastSpawn = 0
+    s.spawnGap = 900
+    s.shake = 0
+    s.flash = 0
+    // Intentionally NOT resetting s.elapsed — keep the difficulty ramp
+    // progress from before the revive rather than snapping back to easy
+    // mode, since the player is continuing the same run.
+
     setLives(1)
-    setScreen("playing")
+    setCombo(0)
+
+    // Normally screen goes "revive" -> "playing", and the screen-change
+    // effect below (`useEffect([screen, startLoop])`) picks that transition
+    // up and calls startLoop() on its own. But if screen is already
+    // "playing" for any reason when this fires, that effect will not
+    // re-run (no dependency change), so the frame loop — already stopped
+    // by endRun's cancelAnimationFrame — would never restart even though
+    // coins were just spent. Handle that case explicitly here instead of
+    // relying solely on the effect.
+    if (screen === "playing") {
+      cancelAnimationFrame(rafRef.current)
+      s.running = false
+      startLoop()
+    } else {
+      setScreen("playing")
+    }
   }
 
   if (screen === "home") {
