@@ -105,7 +105,7 @@ function vibrate(pattern) {
 }
 
 export default function SliceStorm() {
-  const { earn, recordScore, bestScores, coins, spend } = useWallet()
+  const { earn, recordScore, bestScores, coins, spend, canAfford } = useWallet()
   const [screen, setScreen] = useState("home") // home | guide | countdown | playing | revive | over
   const [score, setScore] = useState(0)
   const [lives, setLives] = useState(START_LIVES)
@@ -134,6 +134,7 @@ export default function SliceStorm() {
       shake: 0, // current screen-shake magnitude, decays each frame
       flash: 0, // red damage flash opacity, decays each frame
       elapsed: 0, // ms since run start, drives difficulty ramp
+      coinsAwarded: 0, // coins already credited in the current run
     }
   }
   if (!stateRef.current) stateRef.current = freshState()
@@ -144,9 +145,12 @@ export default function SliceStorm() {
     (finalScore, viaRevive, opts = {}) => {
       cancelAnimationFrame(rafRef.current)
       stateRef.current.running = false
-      const earnedCoins = Math.floor(finalScore * COINS_PER_POINT)
-      setCoinsEarned(earnedCoins)
-      if (earnedCoins > 0) earn(earnedCoins, `Slice Storm · ${finalScore} pts`, GAME.xp)
+      const totalCoins = Math.floor(finalScore * COINS_PER_POINT)
+      const prevAwarded = stateRef.current.coinsAwarded || 0
+      const deltaCoins = Math.max(0, totalCoins - prevAwarded)
+      stateRef.current.coinsAwarded = totalCoins
+      setCoinsEarned(totalCoins)
+      if (deltaCoins > 0) earn(deltaCoins, `Slice Storm · ${finalScore} pts`, GAME.xp)
       recordScore(GAME.id, finalScore)
       // Longer single buzz for "the run just ended" — distinct from the
       // shorter double-pulse used for a bomb hit specifically, so a life
@@ -834,6 +838,7 @@ export default function SliceStorm() {
   }
 
   function handleRevive() {
+    if (!canAfford(REVIVE_COST)) return
     const ok = spend(REVIVE_COST, "Revive · Slice Storm")
     if (!ok) return
 
@@ -843,26 +848,19 @@ export default function SliceStorm() {
     s.particles = []
     s.popups = []
     s.blade = []
+    s.slicing = false
     s.lives = 1
     s.lastSpawn = 0
     s.spawnGap = 900
     s.shake = 0
     s.flash = 0
-    // Intentionally NOT resetting s.elapsed — keep the difficulty ramp
-    // progress from before the revive rather than snapping back to easy
-    // mode, since the player is continuing the same run.
+    // Intentionally NOT resetting s.score or s.elapsed — preserve the score
+    // and difficulty ramp progress so the player continues the same run.
 
     setLives(1)
     setCombo(0)
 
-    // Normally screen goes "revive" -> "playing", and the screen-change
-    // effect below (`useEffect([screen, startLoop])`) picks that transition
-    // up and calls startLoop() on its own. But if screen is already
-    // "playing" for any reason when this fires, that effect will not
-    // re-run (no dependency change), so the frame loop — already stopped
-    // by endRun's cancelAnimationFrame — would never restart even though
-    // coins were just spent. Handle that case explicitly here instead of
-    // relying solely on the effect.
+    // Transition back to "playing" to resume gameplay and restart game loop
     if (screen === "playing") {
       cancelAnimationFrame(rafRef.current)
       s.running = false

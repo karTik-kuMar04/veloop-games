@@ -92,7 +92,12 @@ export function WalletProvider({ children }) {
     () => ({
       ...state,
       earn: (amount, label, xp = 0) => dispatch({ type: "EARN", amount, label, xp }),
-      spend: (amount, label, rewardId) => dispatch({ type: "SPEND", amount, label, rewardId }),
+      spend: (amount, label, rewardId) => {
+        const rounded = Math.max(0, Math.round(amount))
+        if (rounded > state.coins) return false
+        dispatch({ type: "SPEND", amount: rounded, label, rewardId })
+        return true
+      },
       recordScore: (gameId, score) => dispatch({ type: "RECORD_SCORE", gameId, score }),
       canAfford: (amount) => state.coins >= amount,
       reset: () => dispatch({ type: "RESET" }),

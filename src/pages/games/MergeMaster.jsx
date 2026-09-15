@@ -146,7 +146,7 @@ function hasMoves(tiles) {
 }
 
 export default function MergeMaster() {
-  const { earn, recordScore, bestScores, coins, spend } = useWallet()
+  const { earn, recordScore, bestScores, coins, spend, canAfford } = useWallet()
   const [screen, setScreen] = useState("home")
   const [tiles, setTiles] = useState([])
   const [score, setScore] = useState(0)
