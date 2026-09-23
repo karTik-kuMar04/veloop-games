@@ -872,6 +872,87 @@
 }
 
 /* =========================================================
+   GRAFFITI EFFECT FOR HIGH SCORES
+   ========================================================= */
+
+.graffitiBadge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: -0.4rem auto 0.9rem;
+  padding: 0.55rem 1.35rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 45%, #facc15 100%);
+  box-shadow:
+    0 0 25px rgba(244, 63, 94, 0.75),
+    0 0 10px rgba(250, 204, 21, 0.8),
+    inset 0 1px 2px rgba(255, 255, 255, 0.6);
+  transform: rotate(-3deg);
+  animation: graffitiPop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, graffitiFloat 3s ease-in-out infinite 0.45s;
+  z-index: 10;
+}
+
+@keyframes graffitiPop {
+  0% { transform: scale(0.3) rotate(-15deg); opacity: 0; }
+  70% { transform: scale(1.15) rotate(3deg); opacity: 1; }
+  100% { transform: scale(1) rotate(-3deg); opacity: 1; }
+}
+
+@keyframes graffitiFloat {
+  0%, 100% { transform: scale(1) rotate(-3deg); }
+  50% { transform: scale(1.04) rotate(-1deg); }
+}
+
+.graffitiTextWrap {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.graffitiSparkle {
+  font-size: 1.1rem;
+  filter: drop-shadow(0 0 6px #fff);
+  animation: sparkleTwinkle 1s ease-in-out infinite alternate;
+}
+
+@keyframes sparkleTwinkle {
+  from { transform: scale(0.85); opacity: 0.8; }
+  to { transform: scale(1.2); opacity: 1; }
+}
+
+.graffitiText {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #ffffff;
+  text-shadow:
+    2px 2px 0px #000,
+    -1px -1px 0px #000,
+    1px -1px 0px #000,
+    -1px 1px 0px #000,
+    0 0 12px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+}
+
+.newBestPill {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #facc15;
+  text-shadow: 0 0 10px rgba(250, 204, 21, 0.7);
+  animation: glowPulse 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes glowPulse {
+  from { opacity: 0.75; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1.02); }
+}
+
+/* =========================================================
    OVER STATS
    ========================================================= */
 

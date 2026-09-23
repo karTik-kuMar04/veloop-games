@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react"
+import { Heart, Pause, Play, RotateCcw } from "lucide-react"
 import { getGame } from "../../data/games"
 import { useWallet } from "../../store/WalletContext"
 import { GameGuide, GameHome, GameHud, GameOver } from "../../components/game/GameShell"
@@ -12,6 +13,7 @@ const START_LIVES = 3
 const GUIDE = [
   { title: "Swipe to slice", body: "Drag across the screen to cut flying fruit. Each slice scores points." },
   { title: "Chain combos", body: "Slice several fruit in one swipe for bonus combo points." },
+  { title: "Freeze & Golden fruit", body: "Slice blue ice orbs to freeze fruit in midair! Slice golden fruit for double points." },
   { title: "Avoid bombs", body: "Slicing a bomb ends a life. Miss too many fruit and it is game over." },
   { title: "Bank your coins", body: "Every 5 points converts into 1 shared Game Coin at the end of a run." },
 ]
@@ -69,6 +71,26 @@ const FRUIT_KINDS = [
   },
 ]
 
+const FREEZE_KIND = {
+  id: "freeze",
+  rind: "#38bdf8",
+  rindDark: "#0284c7",
+  flesh: "#7dd3fc",
+  fleshDark: "#0369a1",
+  seeds: "#e0f2fe",
+  isFreeze: true,
+}
+
+const GOLDEN_KIND = {
+  id: "golden",
+  rind: "#facc15",
+  rindDark: "#ca8a04",
+  flesh: "#fef08a",
+  fleshDark: "#eab308",
+  seeds: "#713f12",
+  isGolden: true,
+}
+
 function rand(min, max) {
   return Math.random() * (max - min) + min
 }
@@ -86,14 +108,8 @@ function lerp(a, b, t) {
 }
 
 // ---------------------------------------------------------------------------
-// Haptics: navigator.vibrate() only exists on Chromium-based mobile browsers
-// (Android Chrome, Samsung Internet, etc.) — iOS Safari and desktop browsers
-// never implemented it and Safari's vendor position is to not support it, so
-// this must feature-detect and silently no-op everywhere it's unavailable
-// rather than throw. It also requires a real user gesture in the same event
-// tick to fire at all, which both call sites below satisfy (a pointer-down
-// slice handler, and a run-ending event that itself always originates from
-// a slice or a spawn-triggered miss check inside that same handler chain).
+// Haptics: navigator.vibrate() feature detection and safety checks
+// ---------------------------------------------------------------------------
 function vibrate(pattern) {
   if (typeof navigator === "undefined" || typeof navigator.vibrate !== "function") return
   const prefersReducedMotion =
@@ -109,21 +125,35 @@ export default function SliceStorm() {
   const [screen, setScreen] = useState("home") // home | guide | countdown | playing | revive | over
   const [score, setScore] = useState(0)
   const [lives, setLives] = useState(START_LIVES)
-  const [combo, setCombo] = useState(0)
+  const [comboInfo, setComboInfo] = useState(null) // { count, bonus } | null
   const [coinsEarned, setCoinsEarned] = useState(0)
   const [countdownValue, setCountdownValue] = useState(3) // 3, 2, 1, then "Go!"
+  const [isPaused, setIsPaused] = useState(false)
+  const [lifeLost, setLifeLost] = useState(false)
+  const [prevBest, setPrevBest] = useState(0)
+  const [showGraffiti, setShowGraffiti] = useState(false)
 
   const canvasRef = useRef(null)
   const rafRef = useRef(0)
   const stateRef = useRef(null)
-  const goTimeoutRef = useRef(null) // pending "Go!" -> "playing" timeout during countdown
+  const goTimeoutRef = useRef(null)
+  const lifeLostTimerRef = useRef(null)
+  const isPausedRef = useRef(false)
+  const startBestRef = useRef(0)
+  isPausedRef.current = isPaused
+
+  function triggerLifeLost() {
+    setLifeLost(true)
+    if (lifeLostTimerRef.current) clearTimeout(lifeLostTimerRef.current)
+    lifeLostTimerRef.current = setTimeout(() => setLifeLost(false), 550)
+  }
 
   function freshState() {
     return {
       objects: [], // whole fruit / bombs still flying
       halves: [], // sliced fruit halves flying apart
       particles: [], // juice droplets
-      popups: [], // floating "+1" style score text
+      popups: [], // floating score text
       blade: [], // recent pointer points for the trail
       slicing: false,
       lastSpawn: 0,
@@ -131,10 +161,13 @@ export default function SliceStorm() {
       lives: START_LIVES,
       running: false,
       spawnGap: 900,
-      shake: 0, // current screen-shake magnitude, decays each frame
-      flash: 0, // red damage flash opacity, decays each frame
-      elapsed: 0, // ms since run start, drives difficulty ramp
-      coinsAwarded: 0, // coins already credited in the current run
+      shake: 0, // screen-shake magnitude
+      flash: 0, // red damage flash opacity
+      freezeTimer: 0, // freeze duration in ms
+      freezeCooldown: 0, // strict cooldown ms before next freeze item can spawn
+      newRecordPopped: false,
+      elapsed: 0,
+      coinsAwarded: 0, // coins already credited in current run
     }
   }
   if (!stateRef.current) stateRef.current = freshState()
@@ -145,6 +178,7 @@ export default function SliceStorm() {
     (finalScore, viaRevive, opts = {}) => {
       cancelAnimationFrame(rafRef.current)
       stateRef.current.running = false
+      setIsPaused(false)
       const totalCoins = Math.floor(finalScore * COINS_PER_POINT)
       const prevAwarded = stateRef.current.coinsAwarded || 0
       const deltaCoins = Math.max(0, totalCoins - prevAwarded)
@@ -152,23 +186,154 @@ export default function SliceStorm() {
       setCoinsEarned(totalCoins)
       if (deltaCoins > 0) earn(deltaCoins, `Slice Storm · ${finalScore} pts`, GAME.xp)
       recordScore(GAME.id, finalScore)
-      // Longer single buzz for "the run just ended" — distinct from the
-      // shorter double-pulse used for a bomb hit specifically, so a life
-      // lost to a missed fruit (no bomb pulse) still gets its own cue.
-      // Skipped when the caller already fired a bomb-hit vibration in the
-      // same tick, since vibrate() replaces rather than queues patterns.
       if (!opts.skipVibration) vibrate(120)
       setScreen(viaRevive ? "over" : "revive")
     },
     [earn, recordScore],
   )
 
+  function lighten(hex, amt) {
+    const c = hex.replace("#", "")
+    const num = parseInt(c, 16)
+    let r = (num >> 16) & 0xff
+    let g = (num >> 8) & 0xff
+    let b = num & 0xff
+    r = Math.round(lerp(r, 255, amt))
+    g = Math.round(lerp(g, 255, amt))
+    b = Math.round(lerp(b, 255, amt))
+    return `rgb(${r},${g},${b})`
+  }
+
   // ---------------------------------------------------------------------
-  // Drawing helpers — pure functions of (ctx, object). Kept outside the
-  // frame loop body for readability; still called every frame per object,
-  // so they stay simple canvas calls with no allocations beyond gradients.
+  // Drawing helpers
   // ---------------------------------------------------------------------
+  function drawFreezeOrb(ctx, o, dpr) {
+    const r = o.r
+    ctx.save()
+    ctx.translate(o.x, o.y)
+    ctx.rotate(o.rot)
+
+    // outer frosty halo
+    ctx.save()
+    ctx.globalAlpha = 0.45
+    ctx.fillStyle = "#38bdf8"
+    ctx.beginPath()
+    ctx.arc(0, 0, r * 1.3, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.restore()
+
+    // crystal orb body
+    const body = ctx.createRadialGradient(-r * 0.35, -r * 0.4, r * 0.1, 0, 0, r * 1.05)
+    body.addColorStop(0, "#f0f9ff")
+    body.addColorStop(0.3, "#7dd3fc")
+    body.addColorStop(0.7, "#0284c7")
+    body.addColorStop(1, "#0c4a6e")
+    ctx.fillStyle = body
+    ctx.beginPath()
+    ctx.arc(0, 0, r, 0, Math.PI * 2)
+    ctx.fill()
+
+    // 6-pointed snowflake
+    ctx.save()
+    ctx.strokeStyle = "#ffffff"
+    ctx.lineWidth = Math.max(2, r * 0.11)
+    ctx.lineCap = "round"
+    for (let i = 0; i < 3; i++) {
+      ctx.rotate(Math.PI / 3)
+      ctx.beginPath()
+      ctx.moveTo(-r * 0.65, 0)
+      ctx.lineTo(r * 0.65, 0)
+      ctx.stroke()
+      // small ice crystal branch
+      ctx.beginPath()
+      ctx.moveTo(r * 0.4, -r * 0.18)
+      ctx.lineTo(r * 0.5, 0)
+      ctx.lineTo(r * 0.4, r * 0.18)
+      ctx.moveTo(-r * 0.4, -r * 0.18)
+      ctx.lineTo(-r * 0.5, 0)
+      ctx.lineTo(-r * 0.4, r * 0.18)
+      ctx.stroke()
+    }
+    ctx.restore()
+
+    // glossy highlight
+    ctx.save()
+    ctx.globalAlpha = 0.7
+    const hi = ctx.createRadialGradient(-r * 0.4, -r * 0.45, 0, -r * 0.4, -r * 0.45, r * 0.45)
+    hi.addColorStop(0, "#ffffff")
+    hi.addColorStop(1, "#ffffff00")
+    ctx.fillStyle = hi
+    ctx.beginPath()
+    ctx.ellipse(-r * 0.4, -r * 0.45, r * 0.35, r * 0.22, -0.5, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.restore()
+
+    ctx.restore()
+  }
+
+  function drawGoldenFruit(ctx, o, dpr) {
+    const r = o.r
+    ctx.save()
+    ctx.translate(o.x, o.y)
+    ctx.rotate(o.rot)
+
+    // golden aura
+    ctx.save()
+    ctx.globalAlpha = 0.4
+    ctx.fillStyle = "#facc15"
+    ctx.beginPath()
+    ctx.arc(0, 0, r * 1.3, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.restore()
+
+    // golden body
+    const body = ctx.createRadialGradient(-r * 0.35, -r * 0.4, r * 0.1, 0, 0, r * 1.05)
+    body.addColorStop(0, "#fef9c3")
+    body.addColorStop(0.35, "#facc15")
+    body.addColorStop(0.75, "#ca8a04")
+    body.addColorStop(1, "#713f12")
+    ctx.fillStyle = body
+    ctx.beginPath()
+    ctx.arc(0, 0, r, 0, Math.PI * 2)
+    ctx.fill()
+
+    // golden sparkle stars
+    ctx.save()
+    ctx.fillStyle = "#ffffff"
+    for (let i = 0; i < 4; i++) {
+      const a = (i * Math.PI) / 2
+      const dist = r * 0.55
+      ctx.beginPath()
+      ctx.arc(Math.cos(a) * dist, Math.sin(a) * dist, r * 0.08, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    ctx.restore()
+
+    // glossy highlight
+    ctx.save()
+    ctx.globalAlpha = 0.8
+    const hi = ctx.createRadialGradient(-r * 0.4, -r * 0.45, 0, -r * 0.4, -r * 0.45, r * 0.45)
+    hi.addColorStop(0, "#ffffff")
+    hi.addColorStop(1, "#ffffff00")
+    ctx.fillStyle = hi
+    ctx.beginPath()
+    ctx.ellipse(-r * 0.4, -r * 0.45, r * 0.35, r * 0.22, -0.5, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.restore()
+
+    ctx.restore()
+  }
+
   function drawFruit(ctx, o, dpr) {
+    if (o.special === "freeze") {
+      drawFreezeOrb(ctx, o, dpr)
+      return
+    }
+    if (o.special === "golden") {
+      drawGoldenFruit(ctx, o, dpr)
+      return
+    }
+
     const kind = o.kind
     const r = o.r
 
@@ -176,7 +341,7 @@ export default function SliceStorm() {
     ctx.translate(o.x, o.y)
     ctx.rotate(o.rot)
 
-    // soft contact shadow beneath the fruit, drawn first so it sits under it
+    // soft contact shadow
     ctx.save()
     ctx.globalAlpha = 0.18
     ctx.fillStyle = "#000000"
@@ -185,7 +350,7 @@ export default function SliceStorm() {
     ctx.fill()
     ctx.restore()
 
-    // base body with a rounded gradient so it reads as spherical, not flat
+    // base body gradient
     const body = ctx.createRadialGradient(-r * 0.35, -r * 0.4, r * 0.15, 0, 0, r * 1.05)
     body.addColorStop(0, lighten(kind.rind, 0.35))
     body.addColorStop(0.55, kind.rind)
@@ -195,7 +360,7 @@ export default function SliceStorm() {
     ctx.arc(0, 0, r, 0, Math.PI * 2)
     ctx.fill()
 
-    // watermelon stripes: a handful of darker arcs following the curvature
+    // watermelon stripes
     if (kind.hasStripes) {
       ctx.save()
       ctx.clip()
@@ -210,7 +375,7 @@ export default function SliceStorm() {
       ctx.restore()
     }
 
-    // orange dimpled texture: a scatter of tiny darker pores
+    // orange dimpled texture
     if (kind.hasSegments) {
       ctx.save()
       ctx.clip()
@@ -226,7 +391,7 @@ export default function SliceStorm() {
       ctx.restore()
     }
 
-    // apple / plum highlight stem + small leaf for silhouette recognizability
+    // stem + leaf
     if (kind.hasStem) {
       ctx.save()
       ctx.strokeStyle = "#5a3f22"
@@ -243,7 +408,7 @@ export default function SliceStorm() {
       ctx.restore()
     }
 
-    // kiwi: fuzzy speckled rind
+    // kiwi seeds
     if (kind.hasKiwiSeeds) {
       ctx.save()
       ctx.clip()
@@ -251,7 +416,7 @@ export default function SliceStorm() {
       ctx.globalAlpha = 0.4
       for (let i = 0; i < 30; i++) {
         const a = o.textureSeed[i % o.textureSeed.length] * Math.PI * 2
-        const rad = ((i * 37) % 100) / 100 * r * 0.9
+        const rad = (((i * 37) % 100) / 100) * r * 0.9
         ctx.beginPath()
         ctx.arc(Math.cos(a + i) * rad, Math.sin(a + i) * rad, r * 0.025, 0, Math.PI * 2)
         ctx.fill()
@@ -259,7 +424,7 @@ export default function SliceStorm() {
       ctx.restore()
     }
 
-    // glossy highlight — the single detail that most sells "round and shiny"
+    // glossy highlight
     ctx.save()
     ctx.globalAlpha = 0.5
     const hi = ctx.createRadialGradient(-r * 0.4, -r * 0.45, 0, -r * 0.4, -r * 0.45, r * 0.45)
@@ -275,9 +440,6 @@ export default function SliceStorm() {
   }
 
   function drawFruitHalf(ctx, h) {
-    // A half is drawn as the flesh cross-section (flat cut edge) with a rind
-    // rim around the curved outside — this is what makes a "slice" read as
-    // an actual cut rather than the whole fruit just fading out.
     const kind = h.kind
     const r = h.r
     ctx.save()
@@ -286,7 +448,6 @@ export default function SliceStorm() {
     ctx.globalAlpha = clamp(h.life / h.maxLife, 0, 1)
 
     ctx.beginPath()
-    // half-circle: flat edge along local x-axis, dome on the +y or -y side
     ctx.arc(0, 0, r, 0, Math.PI, h.flip)
     ctx.closePath()
 
@@ -296,14 +457,12 @@ export default function SliceStorm() {
     ctx.fillStyle = flesh
     ctx.fill()
 
-    // rind rim around the curved edge only
     ctx.lineWidth = Math.max(2, r * 0.14)
     ctx.strokeStyle = kind.rind
     ctx.beginPath()
     ctx.arc(0, 0, r - ctx.lineWidth / 2, 0, Math.PI, h.flip)
     ctx.stroke()
 
-    // seed flecks on the cut face
     ctx.fillStyle = kind.seeds
     for (let i = 0; i < h.seedDots.length; i += 2) {
       const sx = h.seedDots[i] * r * 0.7
@@ -322,7 +481,6 @@ export default function SliceStorm() {
     ctx.translate(o.x, o.y)
     ctx.rotate(o.rot)
 
-    // contact shadow, same treatment as fruit for visual consistency
     ctx.save()
     ctx.globalAlpha = 0.22
     ctx.fillStyle = "#000000"
@@ -331,8 +489,6 @@ export default function SliceStorm() {
     ctx.fill()
     ctx.restore()
 
-    // warning pulse in the last stretch before a bomb would exit the top —
-    // gives the player a fair visual tell distinct from any fruit.
     if (o.warn > 0) {
       ctx.save()
       ctx.globalAlpha = 0.35 * o.warn
@@ -344,7 +500,6 @@ export default function SliceStorm() {
       ctx.restore()
     }
 
-    // dark metallic body — distinctly angular highlight vs. fruit's soft glow
     const body = ctx.createRadialGradient(-r * 0.3, -r * 0.35, r * 0.1, 0, 0, r)
     body.addColorStop(0, "#3a4356")
     body.addColorStop(0.5, "#1b2130")
@@ -354,7 +509,6 @@ export default function SliceStorm() {
     ctx.arc(0, 0, r, 0, Math.PI * 2)
     ctx.fill()
 
-    // riveted band around the middle for a "device" silhouette, not a fruit
     ctx.save()
     ctx.strokeStyle = "#0b0d14"
     ctx.lineWidth = r * 0.22
@@ -375,7 +529,7 @@ export default function SliceStorm() {
     ctx.stroke()
     ctx.restore()
 
-    // spark at the fuse tip — a small animated glow, cheap but reads as "lit"
+    // spark at fuse tip
     const sparkPulse = 0.6 + 0.4 * Math.sin(o.sparkPhase)
     ctx.save()
     ctx.translate(r * 0.06, -r * 1.5)
@@ -389,7 +543,7 @@ export default function SliceStorm() {
     ctx.fill()
     ctx.restore()
 
-    // glossy highlight, harder-edged than fruit's to feel like metal not skin
+    // glossy metallic highlight
     ctx.save()
     ctx.globalAlpha = 0.6
     const hi = ctx.createRadialGradient(-r * 0.35, -r * 0.4, 0, -r * 0.35, -r * 0.4, r * 0.3)
@@ -404,24 +558,18 @@ export default function SliceStorm() {
     ctx.restore()
   }
 
-  function lighten(hex, amt) {
-    const c = hex.replace("#", "")
-    const num = parseInt(c, 16)
-    let r = (num >> 16) & 0xff
-    let g = (num >> 8) & 0xff
-    let b = num & 0xff
-    r = Math.round(lerp(r, 255, amt))
-    g = Math.round(lerp(g, 255, amt))
-    b = Math.round(lerp(b, 255, amt))
-    return `rgb(${r},${g},${b})`
-  }
-
   // ---------------------------------------------------------------------
-  // Slice reaction: spawns two flying halves + a juice particle burst +
-  // a floating score popup at the slice point.
+  // Slice reaction
   // ---------------------------------------------------------------------
   function sliceFruit(s, o, dpr, hitAngle) {
-    const kind = o.kind
+    const isFreeze = o.special === "freeze"
+    const isGolden = o.special === "golden"
+    if (isFreeze) {
+      s.freezeTimer = 3000
+      s.freezeCooldown = 14000 // 14s strict cooldown before another freeze can spawn
+    }
+
+    const kind = o.kind || FRUIT_KINDS[0]
     for (let side = 0; side < 2; side++) {
       const flip = side === 0
       const dir = side === 0 ? -1 : 1
@@ -442,8 +590,9 @@ export default function SliceStorm() {
         seedDots: o.seedDotsCache,
       })
     }
-    const juiceColor = kind.flesh
-    const n = randInt(10, 16)
+
+    const juiceColor = isFreeze ? "#38bdf8" : isGolden ? "#facc15" : kind.flesh
+    const n = randInt(12, 18)
     for (let i = 0; i < n; i++) {
       const a = rand(0, Math.PI * 2)
       const speed = rand(0.4, 1.8) * dpr
@@ -459,10 +608,14 @@ export default function SliceStorm() {
         decay: rand(0.02, 0.035),
       })
     }
+
+    const popupText = isFreeze ? "FREEZE ❄️" : isGolden ? "+2 ✦" : "+1"
+    const popupColor = isFreeze ? "#38bdf8" : isGolden ? "#fde047" : "#fef08a"
     s.popups.push({
       x: o.x,
       y: o.y,
-      text: "+1",
+      text: popupText,
+      color: popupColor,
       life: 1,
       vy: -0.35 * dpr,
     })
@@ -487,8 +640,6 @@ export default function SliceStorm() {
     }
     s.shake = Math.max(s.shake, 14 * dpr)
     s.flash = 1
-    // Short double-pulse: reads as a sharp "impact" distinct from the
-    // longer single buzz used for the run actually ending (see endRun).
     vibrate([40, 40, 60])
   }
 
@@ -514,22 +665,31 @@ export default function SliceStorm() {
 
     function spawn(w, h) {
       const isBomb = Math.random() < 0.16
-      // Spawn kept toward the middle third of the width (was 0.15-0.85,
-      // i.e. nearly edge-to-edge) so fruit starts closer to center and has
-      // much less horizontal distance left to travel before it could ever
-      // reach the side of the screen.
-      const x = rand(w * 0.35, w * 0.65)
-      // Radius scaled off the smaller canvas dimension instead of a fixed
-      // pixel range (was rand(38, 54), sized for a narrow phone canvas and
-      // proportionally tiny on a wide desktop/web canvas). ~9%-13% of
-      // min(w, h) keeps fruit a consistent, comfortably tappable size
-      // across phone and desktop alike.
+      let special = null
+      if (!isBomb) {
+        // Strict freeze rules:
+        // 1. Never more than 1 freeze orb on screen at a time
+        // 2. Never spawn while freeze is active
+        // 3. Never spawn while freeze cooldown is ticking (14s after activation)
+        const hasFreezeOnScreen = s.objects.some((obj) => !obj.sliced && obj.special === "freeze")
+        const canSpawnFreeze = !hasFreezeOnScreen && s.freezeTimer <= 0 && s.freezeCooldown <= 0
+
+        const roll = Math.random()
+        if (canSpawnFreeze && roll < 0.035) {
+          special = "freeze"
+        } else if (roll < 0.12) {
+          special = "golden"
+        }
+      }
+      // Widen spawn across full playable stage (15% to 85% width)
+      const x = rand(w * 0.15, w * 0.85)
       const minDim = Math.min(w, h)
-      const r = rand(minDim * 0.06, minDim * 0.09)
-      // Sized for the largest consumer: the orange dimple-texture loop reads
-      // up to index (22 * 2 + 1) = 43, so this needs at least 44 entries.
-      // The kiwi-seed loop indexes with modulo, so it's safe at any size.
+      // Raised lower boundaries so fruits are juicy and comfortable to slice, never tiny
+      const minR = Math.max(38, minDim * 0.095)
+      const maxR = Math.max(54, minDim * 0.135)
+      const r = rand(minR, maxR)
       const textureSeed = Array.from({ length: 44 }, () => Math.random())
+
       s.objects.push({
         x,
         y: 0,
@@ -538,7 +698,8 @@ export default function SliceStorm() {
         vyReal: 0,
         color: null,
         bomb: isBomb,
-        kind: isBomb ? null : pick(FRUIT_KINDS),
+        special,
+        kind: isBomb ? null : special === "freeze" ? FREEZE_KIND : special === "golden" ? GOLDEN_KIND : pick(FRUIT_KINDS),
         sliced: false,
         rot: rand(0, Math.PI * 2),
         vr: rand(-0.05, 0.05),
@@ -551,13 +712,22 @@ export default function SliceStorm() {
 
     function frame(now) {
       if (!s.running) return
+      if (isPausedRef.current) {
+        last = now
+        rafRef.current = requestAnimationFrame(frame)
+        return
+      }
+
       const dt = Math.min(now - last, 40)
       last = now
       s.elapsed += dt
+      if (s.freezeCooldown > 0) {
+        s.freezeCooldown = Math.max(0, s.freezeCooldown - dt)
+      }
       const w = canvas.width
       const h = canvas.height
 
-      // decaying screen shake offset, applied to the whole draw pass
+      // decaying screen shake offset
       s.shake *= 0.9
       if (s.shake < 0.05) s.shake = 0
       const shakeX = s.shake ? rand(-1, 1) * s.shake : 0
@@ -566,8 +736,7 @@ export default function SliceStorm() {
       ctx.save()
       ctx.translate(shakeX, shakeY)
 
-      // background: soft vertical gradient + a faint vignette so fruit
-      // reads clearly against depth instead of a flat/blank canvas
+      // background gradient & vignette
       const bg = ctx.createLinearGradient(0, 0, 0, h)
       bg.addColorStop(0, "#0d1b2e")
       bg.addColorStop(1, "#152238")
@@ -579,7 +748,26 @@ export default function SliceStorm() {
       ctx.fillStyle = vignette
       ctx.fillRect(-4 * dpr, -4 * dpr, w + 8 * dpr, h + 8 * dpr)
 
-      // spawn, with difficulty ramp gentler for the first ~15s of a run
+      // Freeze duration & frosty tint overlay
+      const isFrozen = s.freezeTimer > 0
+      if (isFrozen) {
+        s.freezeTimer = Math.max(0, s.freezeTimer - dt)
+        ctx.save()
+        const frost = ctx.createRadialGradient(w / 2, h / 2, h * 0.2, w / 2, h / 2, h * 0.8)
+        frost.addColorStop(0, "rgba(56, 189, 248, 0.08)")
+        frost.addColorStop(1, "rgba(56, 189, 248, 0.28)")
+        ctx.fillStyle = frost
+        ctx.fillRect(-4 * dpr, -4 * dpr, w + 8 * dpr, h + 8 * dpr)
+
+        ctx.font = `bold ${15 * dpr}px system-ui, sans-serif`
+        ctx.fillStyle = "#bae6fd"
+        ctx.textAlign = "center"
+        const secLeft = (s.freezeTimer / 1000).toFixed(1)
+        ctx.fillText(`❄️ FROZEN · ${secLeft}s`, w / 2, 45 * dpr)
+        ctx.restore()
+      }
+
+      // Spawning with difficulty ramp
       s.lastSpawn += dt
       const rampProgress = clamp(s.elapsed / 15000, 0, 1)
       const minGap = lerp(560, 420, rampProgress)
@@ -593,27 +781,28 @@ export default function SliceStorm() {
       for (const o of s.objects) {
         if (o.vyReal === 0) {
           o.y = h + o.r
-          o.vx = rand(-0.2, 0.2) * dpr
+          // Inward launch angle based on launch position
+          if (o.x < w * 0.35) {
+            o.vx = rand(0.08, 0.28) * dpr
+          } else if (o.x > w * 0.65) {
+            o.vx = rand(-0.28, -0.08) * dpr
+          } else {
+            o.vx = rand(-0.15, 0.15) * dpr
+          }
           o.launchX = o.x
-          // Scale launch speed to actual canvas height so fruit reliably
-          // reaches the upper portion of the stage on every screen size,
-          // instead of a fixed velocity that only cleared ~240px regardless
-          // of how tall the canvas actually was. Using v = sqrt(2 * g * d)
-          // for the desired peak height d (a random 55%-80% of the stage,
-          // so arcs still vary run to run rather than all peaking at the
-          // same line).
           const gravityPerMs = 0.0015 * dpr
           const targetHeight = rand(0.55, 0.8) * h
           o.vyReal = -Math.sqrt(2 * gravityPerMs * targetHeight)
         }
-        o.vyReal += 0.0015 * dpr * dt
-        o.y += o.vyReal * dt
-        o.x += o.vx * dt
-        o.rot += o.vr
+
+        // Frozen fruit hovers/moves at only 12% speed; bombs move at full 100% speed!
+        const objDt = isFrozen && !o.bomb ? dt * 0.12 : dt
+        o.vyReal += 0.0015 * dpr * objDt
+        o.y += o.vyReal * objDt
+        o.x += o.vx * objDt
+        o.rot += o.vr * (isFrozen && !o.bomb ? 0.2 : 1)
         o.sparkPhase += dt * 0.02
 
-        // bombs pulse a warning ring once they're past the apex and in the
-        // top third of the stage, moving fast enough that a miss is imminent
         if (o.bomb) {
           const nearTop = o.y < h * 0.35 && o.vyReal < 0
           o.warn = nearTop ? clamp(o.warn + dt * 0.006, 0, 1) : Math.max(0, o.warn - dt * 0.004)
@@ -631,6 +820,7 @@ export default function SliceStorm() {
           if (!o.sliced && !o.bomb) {
             s.lives -= 1
             setLives(s.lives)
+            triggerLifeLost()
             if (s.lives <= 0) {
               endRun(s.score, false)
               return false
@@ -641,7 +831,7 @@ export default function SliceStorm() {
         return true
       })
 
-      // ---- sliced halves: physics + draw + cull ----
+      // ---- sliced halves ----
       for (const hlf of s.halves) {
         hlf.vy += hlf.g * dt
         hlf.x += hlf.vx * dt
@@ -652,7 +842,7 @@ export default function SliceStorm() {
       }
       s.halves = s.halves.filter((hlf) => hlf.life > 0 && hlf.y < h + hlf.r * 3)
 
-      // ---- juice particles: physics + draw + cull ----
+      // ---- juice particles ----
       ctx.save()
       for (const p of s.particles) {
         p.vy += p.g * dt
@@ -670,19 +860,19 @@ export default function SliceStorm() {
 
       // ---- score popups ----
       ctx.save()
-      ctx.font = `${28 * dpr}px system-ui, sans-serif`
+      ctx.font = `bold ${26 * dpr}px system-ui, sans-serif`
       ctx.textAlign = "center"
-      ctx.fillStyle = "#fef08a"
       for (const pop of s.popups) {
         pop.y += pop.vy * dt
         pop.life -= dt * 0.0016
         ctx.globalAlpha = clamp(pop.life, 0, 1)
+        ctx.fillStyle = pop.color || "#fef08a"
         ctx.fillText(pop.text, pop.x, pop.y)
       }
       ctx.restore()
       s.popups = s.popups.filter((pop) => pop.life > 0)
 
-      // ---- blade trail: fades from head to tail ----
+      // ---- blade trail ----
       if (s.blade.length > 1) {
         for (let i = 1; i < s.blade.length; i++) {
           const t = i / s.blade.length
@@ -697,9 +887,9 @@ export default function SliceStorm() {
       }
       if (s.blade.length) s.blade = s.blade.slice(-14)
 
-      ctx.restore() // undo shake translate
+      ctx.restore()
 
-      // damage flash drawn in screen space, unaffected by shake translate
+      // damage flash
       if (s.flash > 0) {
         ctx.save()
         ctx.globalAlpha = s.flash * 0.35
@@ -729,12 +919,7 @@ export default function SliceStorm() {
     }
   }, [screen, startLoop])
 
-  // 3-2-1-Go countdown, shown before a fresh run starts. Kept as its own
-  // screen/effect entirely separate from startLoop — the canvas game loop
-  // only ever starts once `screen` becomes "playing", so no fruit spawns
-  // or physics run during the countdown itself. A revive skips this and
-  // goes straight back to "playing" (see handleRevive), since interrupting
-  // a continue with a countdown reads as a penalty, not a courtesy.
+  // 3-2-1-Go countdown
   useEffect(() => {
     if (screen !== "countdown") return
     setCountdownValue(3)
@@ -761,6 +946,7 @@ export default function SliceStorm() {
   // pointer slicing
   const handlePointer = useCallback(
     (clientX, clientY) => {
+      if (isPausedRef.current) return
       const canvas = canvasRef.current
       if (!canvas) return
       const rect = canvas.getBoundingClientRect()
@@ -782,45 +968,51 @@ export default function SliceStorm() {
             bombBurst(s, o, dpr)
             s.lives -= 1
             setLives(s.lives)
+            triggerLifeLost()
             if (s.lives <= 0) {
-              // A bomb-hit vibration was already fired inside bombBurst
-              // above, and endRun below would normally fire its own
-              // separate "run ended" buzz — but navigator.vibrate()
-              // cancels and replaces any in-progress pattern rather than
-              // queuing after it, so calling both back-to-back here would
-              // just truncate the first into an inaudible stub. Skip
-              // endRun's vibration in this specific case and let the
-              // bomb's own pulse play out in full instead.
               endRun(s.score, false, { skipVibration: true })
               return
             }
           } else {
             sliceFruit(s, o, dpr, hitAngle)
             hitThisMove += 1
-            s.score += 1
+            const pts = o.special === "golden" ? 2 : 1
+            s.score += pts
           }
         }
       }
       if (hitThisMove > 0) {
-        // combo bonus
-        if (hitThisMove > 1) s.score += hitThisMove
+        let bonus = 0
+        if (hitThisMove > 1) {
+          bonus = hitThisMove
+          s.score += bonus
+        }
         setScore(s.score)
-        setCombo(hitThisMove)
-        if (hitThisMove > 1) window.clearTimeout(handlePointer._t)
-        handlePointer._t = window.setTimeout(() => setCombo(0), 700)
+        // Graffiti effect celebration when breaking personal best score
+        if (startBestRef.current > 0 && s.score > startBestRef.current && !s.newRecordPopped) {
+          s.newRecordPopped = true
+          setShowGraffiti(true)
+          window.setTimeout(() => setShowGraffiti(false), 2400)
+        }
+        if (hitThisMove > 1) {
+          setComboInfo({ count: hitThisMove, bonus })
+          if (handlePointer._t) window.clearTimeout(handlePointer._t)
+          handlePointer._t = window.setTimeout(() => setComboInfo(null), 850)
+        }
       }
     },
     [endRun],
   )
 
   function onPointerDown(e) {
+    if (isPaused) return
     stateRef.current.slicing = true
     stateRef.current.blade = []
     const t = e.touches ? e.touches[0] : e
     handlePointer(t.clientX, t.clientY)
   }
   function onPointerMove(e) {
-    if (!stateRef.current.slicing) return
+    if (isPaused || !stateRef.current.slicing) return
     const t = e.touches ? e.touches[0] : e
     handlePointer(t.clientX, t.clientY)
   }
@@ -830,10 +1022,16 @@ export default function SliceStorm() {
 
   function beginRun() {
     stateRef.current = freshState()
+    const currentBest = bestScores[GAME.id] || 0
+    startBestRef.current = currentBest
+    setPrevBest(currentBest)
+    setShowGraffiti(false)
+    setIsPaused(false)
     setScore(0)
     setLives(START_LIVES)
-    setCombo(0)
+    setComboInfo(null)
     setCoinsEarned(0)
+    setLifeLost(false)
     setScreen("countdown")
   }
 
@@ -854,13 +1052,12 @@ export default function SliceStorm() {
     s.spawnGap = 900
     s.shake = 0
     s.flash = 0
-    // Intentionally NOT resetting s.score or s.elapsed — preserve the score
-    // and difficulty ramp progress so the player continues the same run.
+    s.freezeTimer = 0
 
     setLives(1)
-    setCombo(0)
+    setComboInfo(null)
+    setIsPaused(false)
 
-    // Transition back to "playing" to resume gameplay and restart game loop
     if (screen === "playing") {
       cancelAnimationFrame(rafRef.current)
       s.running = false
@@ -906,10 +1103,28 @@ export default function SliceStorm() {
           setScreen("home")
         }}
         extra={
-          <div className={styles.lives} aria-label={`${lives} lives left`}>
-            {Array.from({ length: START_LIVES }).map((_, i) => (
-              <span key={i} className={i < lives ? styles.lifeOn : styles.lifeOff} />
-            ))}
+          <div className={styles.hudActions}>
+            <div
+              className={`${styles.lives} ${lifeLost ? styles.lifeLostShake : ""}`}
+              aria-label={`${lives} lives left`}
+            >
+              {Array.from({ length: START_LIVES }).map((_, i) => (
+                <Heart
+                  key={i}
+                  size={19}
+                  className={i < lives ? styles.heartActive : styles.heartEmpty}
+                  fill={i < lives ? "currentColor" : "none"}
+                />
+              ))}
+            </div>
+            <button
+              type="button"
+              className={styles.pauseBtn}
+              onClick={() => setIsPaused((p) => !p)}
+              aria-label={isPaused ? "Resume" : "Pause"}
+            >
+              {isPaused ? <Play size={16} fill="currentColor" /> : <Pause size={16} />}
+            </button>
           </div>
         }
       />
@@ -926,14 +1141,68 @@ export default function SliceStorm() {
           onTouchMove={onPointerMove}
           onTouchEnd={onPointerUp}
         />
-        {combo > 1 && <div className={styles.combo}>{`${combo}x combo!`}</div>}
+        {showGraffiti && (
+          <div className={styles.inGameGraffiti}>
+            <div className={styles.inGameGraffitiSplatter} />
+            <div className={styles.inGameGraffitiText}>
+              ⚡ NEW HIGH SCORE! ⚡
+            </div>
+          </div>
+        )}
+        {comboInfo && (
+          <div className={styles.combo}>
+            <div className={styles.comboCount}>{comboInfo.count}× COMBO!</div>
+            <div className={styles.comboBonus}>+{comboInfo.bonus} bonus</div>
+          </div>
+        )}
       </div>
+
+      {isPaused && (
+        <div className={styles.pauseOverlay}>
+          <div className={styles.pauseCard}>
+            <h2 className={styles.pauseTitle}>Game Paused</h2>
+            <p className={styles.pauseText}>Take a quick breather. Ready to jump back in?</p>
+            <div className={styles.pauseActions}>
+              <button
+                type="button"
+                className={styles.primaryPauseBtn}
+                onClick={() => setIsPaused(false)}
+              >
+                <Play size={18} fill="currentColor" /> Resume
+              </button>
+              <button
+                type="button"
+                className={styles.ghostPauseBtn}
+                onClick={() => {
+                  setIsPaused(false)
+                  beginRun()
+                }}
+              >
+                <RotateCcw size={17} /> Restart
+              </button>
+              <button
+                type="button"
+                className={styles.quitPauseBtn}
+                onClick={() => {
+                  setIsPaused(false)
+                  cancelAnimationFrame(rafRef.current)
+                  stateRef.current.running = false
+                  setScreen("home")
+                }}
+              >
+                Quit to menu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {(screen === "revive" || screen === "over") && (
         <GameOver
           game={GAME}
           score={score}
           coinsEarned={coinsEarned}
+          prevBest={prevBest}
           isRevive={screen === "revive" && coins >= REVIVE_COST}
           onRevive={handleRevive}
           onRetry={beginRun}

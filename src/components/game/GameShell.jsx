@@ -143,16 +143,33 @@ export function GameOver({
   onRevive,
   onRetry,
   onHome,
+  prevBest = 0,
 }) {
-  const { coins } = useWallet();
+  const { coins, bestScores } = useWallet();
+  const currentBest = bestScores[game.id] || 0;
+  const baseline = prevBest > 0 ? prevBest : currentBest;
+  const isNewBest = score > baseline && score > 0;
+  const displayBest = Math.max(score, currentBest, baseline);
+
   return (
     <div className={styles.overlay}>
       <div className={styles.overCard} style={{ "--accent": game.accent }}>
+        {isNewBest && (
+          <div className={styles.graffitiBadge}>
+            <div className={styles.graffitiSplatters} />
+            <div className={styles.graffitiTextWrap}>
+              <span className={styles.graffitiSparkle}>⚡</span>
+              <span className={styles.graffitiText}>NEW HIGH SCORE!</span>
+              <span className={styles.graffitiSparkle}>⚡</span>
+            </div>
+          </div>
+        )}
+
         <span className="vl-eyebrow">
-          {isRevive ? "🔥 Last chance" : "Run complete"}
+          {isRevive ? "🔥 Last chance" : isNewBest ? "🏆 New Record" : "Run complete"}
         </span>
         <h2 className={styles.overTitle}>
-          {isRevive ? "Keep the run alive?" : "Nice run!"}
+          {isRevive ? "Keep the run alive?" : isNewBest ? "Record Smashed!" : "Nice run!"}
         </h2>
 
         <div className={styles.finalScore}>
@@ -171,8 +188,9 @@ export function GameOver({
           <div>
             <span>Best</span>
             <strong>
-              {Math.max(score, 0).toLocaleString()}
+              {displayBest.toLocaleString()}
             </strong>
+            {isNewBest && <span className={styles.newBestPill}>NEW BEST!</span>}
           </div>
         </div>
 

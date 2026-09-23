@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react"
+import { Undo2 } from "lucide-react"
 import { getGame } from "../../data/games"
 import { useWallet } from "../../store/WalletContext"
 import { GameGuide, GameHome, GameHud, GameOver } from "../../components/game/GameShell"
@@ -10,9 +11,10 @@ const REVIVE_COST = 50
 const COINS_PER_POINT = 1 / 40 // 1 coin per 40 points
 
 const GUIDE = [
-  { title: "Slide the board", body: "Use arrow keys or swipe to slide every tile in one direction." },
+  { title: "Slide the board", body: "Use arrow keys, WASD, or swipe to slide every tile in one direction." },
   { title: "Merge matches", body: "Two tiles with the same number merge into one worth double." },
-  { title: "Keep space open", body: "A new tile appears after each move. Fill the board and it is game over." },
+  { title: "Undo mistakes", body: "Made an unintended slide? Use your 1 free undo per run (or 10 coins for more)." },
+  { title: "Aim for 2048", body: "A new tile appears after each move. Reach 2048 or higher for major rewards!" },
   { title: "Earn coins", body: "Your final score converts to shared Game Coins — 1 coin per 40 points." },
 ]
 
@@ -101,7 +103,6 @@ function move(tiles, dir) {
         i += 1
       }
     }
-    // place merged into positions 0..merged.length-1
     for (let idx = 0; idx < SIZE; idx++) {
       const slot = merged[idx]
       let pos = idx
@@ -150,17 +151,28 @@ export default function MergeMaster() {
   const [screen, setScreen] = useState("home")
   const [tiles, setTiles] = useState([])
   const [score, setScore] = useState(0)
+  const [moves, setMoves] = useState(0)
+  const [history, setHistory] = useState(null)
+  const [freeUndosLeft, setFreeUndosLeft] = useState(1)
   const [coinsEarned, setCoinsEarned] = useState(0)
+  const [prevBest, setPrevBest] = useState(0)
+
   const touchRef = useRef(null)
   const scoreRef = useRef(0)
+  const movesRef = useRef(0)
+  const coinsAwardedRef = useRef(0)
+  const revivedRef = useRef(false)
 
   const best = bestScores[GAME.id] || 0
 
   const endRun = useCallback(
     (finalScore, viaRevive) => {
-      const earnedCoins = Math.floor(finalScore * COINS_PER_POINT)
-      setCoinsEarned(earnedCoins)
-      if (earnedCoins > 0) earn(earnedCoins, `Merge Master · ${finalScore} pts`, GAME.xp)
+      const totalCoins = Math.floor(finalScore * COINS_PER_POINT)
+      const prevAwarded = coinsAwardedRef.current || 0
+      const deltaCoins = Math.max(0, totalCoins - prevAwarded)
+      coinsAwardedRef.current = totalCoins
+      setCoinsEarned(totalCoins)
+      if (deltaCoins > 0) earn(deltaCoins, `Merge Master · ${finalScore} pts`, GAME.xp)
       recordScore(GAME.id, finalScore)
       setScreen(viaRevive ? "over" : "revive")
     },
@@ -169,22 +181,50 @@ export default function MergeMaster() {
 
   const doMove = useCallback(
     (dir) => {
+      if (screen !== "playing") return
       setTiles((prev) => {
         const { tiles: moved, moved: didMove, gained } = move(prev, dir)
         if (!didMove) return prev
+
+        // Save history snapshot for undo
+        setHistory({
+          tiles: prev,
+          score: scoreRef.current,
+          moves: movesRef.current,
+        })
+        movesRef.current += 1
+        setMoves(movesRef.current)
+
         const next = spawnTile(moved)
         const newScore = scoreRef.current + gained
         scoreRef.current = newScore
         setScore(newScore)
         if (!hasMoves(next)) {
           // defer end so the last tile renders
-          setTimeout(() => endRun(newScore, false), 120)
+          setTimeout(() => endRun(newScore, revivedRef.current), 140)
         }
         return next
       })
     },
-    [endRun],
+    [screen, endRun],
   )
+
+  function handleUndo() {
+    if (screen !== "playing" || !history) return
+    if (freeUndosLeft > 0) {
+      setFreeUndosLeft((f) => f - 1)
+    } else {
+      if (!canAfford(10)) return
+      const ok = spend(10, "Undo Move · Merge Master")
+      if (!ok) return
+    }
+    setTiles(history.tiles)
+    scoreRef.current = history.score
+    setScore(history.score)
+    movesRef.current = history.moves
+    setMoves(history.moves)
+    setHistory(null)
+  }
 
   useEffect(() => {
     if (screen !== "playing") return
@@ -210,11 +250,13 @@ export default function MergeMaster() {
   }, [screen, doMove])
 
   function onTouchStart(e) {
+    if (screen !== "playing") return
     const t = e.touches[0]
     touchRef.current = { x: t.clientX, y: t.clientY }
   }
+
   function onTouchEnd(e) {
-    if (!touchRef.current) return
+    if (screen !== "playing" || !touchRef.current) return
     const t = e.changedTouches[0]
     const dx = t.clientX - touchRef.current.x
     const dy = t.clientY - touchRef.current.y
@@ -229,22 +271,34 @@ export default function MergeMaster() {
   function beginRun() {
     tileSeq = 1
     scoreRef.current = 0
+    movesRef.current = 0
+    coinsAwardedRef.current = 0
+    revivedRef.current = false
+    const currentBest = bestScores[GAME.id] || 0
+    setPrevBest(currentBest)
     setScore(0)
+    setMoves(0)
+    setHistory(null)
+    setFreeUndosLeft(1)
     setCoinsEarned(0)
     setTiles(initBoard())
     setScreen("playing")
   }
 
   function handleRevive() {
+    if (!canAfford(REVIVE_COST)) return
     if (!spend(REVIVE_COST, "Revive · Merge Master")) return
-    // clear the 4 highest tiles to give breathing room
+    revivedRef.current = true
+    // clear the 4 lowest tiles to give breathing room while keeping the highest tiles intact!
     setTiles((prev) => {
-      const sorted = [...prev].sort((a, b) => b.value - a.value)
+      const sorted = [...prev].sort((a, b) => a.value - b.value)
       const removeIds = new Set(sorted.slice(0, 4).map((t) => t.id))
       return prev.filter((t) => !removeIds.has(t.id))
     })
     setScreen("playing")
   }
+
+  const highestTile = tiles.length > 0 ? Math.max(...tiles.map((t) => t.value)) : 2
 
   if (screen === "home") {
     return <GameHome game={GAME} best={best} onStart={beginRun} onGuide={() => setScreen("guide")} />
@@ -259,9 +313,43 @@ export default function MergeMaster() {
         game={GAME}
         score={score}
         onQuit={() => setScreen("home")}
+        extra={
+          <div className={styles.hudStats}>
+            <div
+              className={styles.highestBadge}
+              style={{
+                background: `linear-gradient(135deg, ${TILE_COLORS[highestTile] || "#ef4444"}, color-mix(in srgb, ${TILE_COLORS[highestTile] || "#ef4444"} 65%, #000 35%))`,
+              }}
+              title="Highest tile on the board"
+            >
+              <span className={styles.badgeLabel}>MAX</span>
+              <strong className={styles.badgeVal}>{highestTile}</strong>
+            </div>
+            <div className={styles.movesBox}>
+              <span>Moves</span>
+              <strong>{moves}</strong>
+            </div>
+          </div>
+        }
       />
 
       <div className={styles.boardWrap}>
+        <div className={styles.boardTopBar}>
+          <div className={styles.boardPrompt}>
+            Merge pairs toward <strong>2048</strong>
+          </div>
+          <button
+            type="button"
+            className={styles.undoBtn}
+            onClick={handleUndo}
+            disabled={!history || (freeUndosLeft === 0 && !canAfford(10))}
+            title={freeUndosLeft > 0 ? "1 Free undo available" : "Costs 10 coins"}
+          >
+            <Undo2 size={16} />
+            <span>{freeUndosLeft > 0 ? "Undo (Free)" : "Undo (10 🪙)"}</span>
+          </button>
+        </div>
+
         <div
           className={styles.board}
           onTouchStart={onTouchStart}
@@ -288,7 +376,7 @@ export default function MergeMaster() {
                     #000 28%
                   )
                 )`,
-                color: t.value <= 4 ? "#f8fafc" : "#08110d",
+                color: "#ffffff",
                 fontSize:
                   t.value >= 1024
                     ? "1.5rem"
@@ -318,6 +406,7 @@ export default function MergeMaster() {
           game={GAME}
           score={score}
           coinsEarned={coinsEarned}
+          prevBest={prevBest}
           isRevive={screen === "revive" && coins >= REVIVE_COST}
           onRevive={handleRevive}
           onRetry={beginRun}

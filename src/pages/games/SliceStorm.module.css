@@ -28,52 +28,296 @@
   cursor: crosshair;
 }
 
+.hudActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .lives {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   align-items: center;
+  transition: transform 0.1s ease;
 }
 
-.lifeOn,
-.lifeOff {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
+.heartActive {
+  color: #ef4444;
+  filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.7));
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.lifeOn {
-  background: var(--accent, #f59e0b);
-  box-shadow: 0 0 10px var(--accent, #f59e0b);
+.heartEmpty {
+  color: rgba(255, 255, 255, 0.22);
 }
 
-.lifeOff {
-  background: rgba(255, 255, 255, 0.14);
+.lifeLostShake {
+  animation: shakeLife 0.5s ease-in-out;
+}
+
+@keyframes shakeLife {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px) scale(1.1); }
+  40% { transform: translateX(5px) scale(0.95); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(2px); }
+}
+
+.pauseBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pauseBtn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: scale(1.05);
+}
+
+.pauseBtn:active {
+  transform: scale(0.95);
 }
 
 .combo {
   position: absolute;
-  top: 22%;
+  top: 20%;
   left: 50%;
   transform: translateX(-50%);
-  font-family: var(--font-display);
-  font-size: 2.4rem;
-  color: #fde68a;
-  text-shadow: 0 4px 18px rgba(245, 158, 11, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   pointer-events: none;
-  animation: pop 0.7s ease forwards;
+  animation: popCombo 0.85s ease forwards;
 }
 
-@keyframes pop {
+.comboCount {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 6vw, 3.2rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #fde68a;
+  text-shadow: 0 4px 20px rgba(245, 158, 11, 0.8), 0 0 10px #f59e0b;
+}
+
+.comboBonus {
+  font-family: var(--font-body);
+  font-size: clamp(0.95rem, 2.5vw, 1.25rem);
+  font-weight: 700;
+  color: #34d399;
+  text-shadow: 0 2px 10px rgba(52, 211, 153, 0.6);
+  margin-top: -4px;
+}
+
+@keyframes popCombo {
   0% {
-    transform: translateX(-50%) scale(0.4);
+    transform: translateX(-50%) scale(0.3);
     opacity: 0;
   }
-  30% {
-    transform: translateX(-50%) scale(1.1);
+  25% {
+    transform: translateX(-50%) scale(1.15);
+    opacity: 1;
+  }
+  75% {
+    transform: translateX(-50%) scale(1);
     opacity: 1;
   }
   100% {
-    transform: translateX(-50%) scale(1) translateY(-30px);
+    transform: translateX(-50%) scale(0.95) translateY(-32px);
+    opacity: 0;
+  }
+}
+
+/* Pause Overlay */
+.pauseOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(7, 10, 15, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: grid;
+  place-items: center;
+  z-index: 50;
+  animation: fadeIn 0.2s ease;
+  padding: 20px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.pauseCard {
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 32px 28px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  animation: zoomCard 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes zoomCard {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.pauseTitle {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #f8fafc;
+  margin: 0 0 8px;
+}
+
+.pauseText {
+  font-size: 0.95rem;
+  color: #94a3b8;
+  margin: 0 0 24px;
+}
+
+.pauseActions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.primaryPauseBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  border-radius: 12px;
+  background: var(--accent, #f59e0b);
+  color: #0b0e14;
+  font-weight: 700;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.35);
+}
+
+.primaryPauseBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5);
+}
+
+.ghostPauseBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ghostPauseBtn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.quitPauseBtn {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 6px;
+  transition: color 0.15s ease;
+}
+
+.quitPauseBtn:hover {
+  color: #ef4444;
+}
+
+/* --- In-Game High Score Graffiti Popup --- */
+.inGameGraffiti {
+  position: absolute;
+  top: 15%;
+  left: 50%;
+  transform: translateX(-50%) rotate(-4deg);
+  pointer-events: none;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: graffitiBannerPop 2.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.inGameGraffitiText {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 5.5vw, 2.8rem);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  padding: 0.6rem 1.6rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 50%, #facc15 100%);
+  color: #ffffff;
+  text-shadow:
+    2px 2px 0px #000,
+    -1px -1px 0px #000,
+    1px -1px 0px #000,
+    -1px 1px 0px #000,
+    0 0 16px rgba(0, 0, 0, 0.85);
+  box-shadow:
+    0 0 35px rgba(244, 63, 94, 0.85),
+    0 0 14px rgba(250, 204, 21, 0.9),
+    inset 0 1px 2px rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+}
+
+.inGameGraffitiSplatter {
+  position: absolute;
+  inset: -12px -20px;
+  background: radial-gradient(circle, rgba(244, 63, 94, 0.4) 0%, transparent 70%);
+  filter: blur(8px);
+  pointer-events: none;
+}
+
+@keyframes graffitiBannerPop {
+  0% {
+    transform: translateX(-50%) scale(0.2) rotate(-16deg);
+    opacity: 0;
+  }
+  15% {
+    transform: translateX(-50%) scale(1.15) rotate(2deg);
+    opacity: 1;
+  }
+  25% {
+    transform: translateX(-50%) scale(1) rotate(-4deg);
+    opacity: 1;
+  }
+  80% {
+    transform: translateX(-50%) scale(1) rotate(-4deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) scale(0.9) translateY(-25px) rotate(-4deg);
     opacity: 0;
   }
 }
@@ -92,9 +336,6 @@
   font-size: clamp(4.5rem, 22vw, 9rem);
   color: var(--accent, #f59e0b);
   text-shadow: 0 0 40px color-mix(in srgb, var(--accent, #f59e0b) 65%, transparent);
-  /* key={countdownValue} on the element in JSX forces a fresh mount for
-     every number change, which re-triggers this animation each time
-     rather than only playing once on the very first render. */
   animation: countdown-pop 0.72s cubic-bezier(0.2, 1.4, 0.4, 1);
 }
 
@@ -118,6 +359,12 @@
 
 @media (prefers-reduced-motion: reduce) {
   .countdownNumber {
+    animation: none;
+  }
+  .combo {
+    animation: none;
+  }
+  .lifeLostShake {
     animation: none;
   }
 }
