@@ -781,17 +781,10 @@ export default function SliceStorm() {
       for (const o of s.objects) {
         if (o.vyReal === 0) {
           const gravityPerMs = 0.0015 * dpr
-          const targetHeight = rand(0.4, 0.75) * h
+          const targetHeight = rand(0.5, 0.78) * h
           o.launchX = o.x
-
-          if (isFrozen) {
-            // Throw directly into visible midair play area and suspend immovable!
-            o.y = h - targetHeight
-            o.vyReal = 0.05 * dpr // initial downward nudge for when freeze wears off
-          } else {
-            o.y = h + o.r
-            o.vyReal = -Math.sqrt(2 * gravityPerMs * targetHeight)
-          }
+          o.y = h + o.r // Always launch smoothly from bottom of screen (no mid-screen popping)
+          o.vyReal = -Math.sqrt(2 * gravityPerMs * targetHeight)
 
           // Inward launch angle based on launch position
           if (o.x < w * 0.35) {
@@ -803,12 +796,13 @@ export default function SliceStorm() {
           }
         }
 
-        // Immovable in midair while frozen (0 movement/rotation); when freeze wears off, physics & gravity resume!
-        const objDt = isFrozen ? 0 : dt
+        // Fruit Ninja style bullet-time freeze: items move at 8% slow-mo speed during freeze.
+        // They rise smoothly from bottom to high point of projectile, hang near apex, and fall when freeze wears off!
+        const objDt = isFrozen ? dt * 0.08 : dt
         o.vyReal += 0.0015 * dpr * objDt
         o.y += o.vyReal * objDt
         o.x += o.vx * objDt
-        o.rot += o.vr * (isFrozen ? 0 : 1)
+        o.rot += o.vr * (isFrozen ? 0.15 : 1)
         o.sparkPhase += dt * 0.02
 
         if (o.bomb) {
