@@ -565,8 +565,8 @@ export default function SliceStorm() {
     const isFreeze = o.special === "freeze"
     const isGolden = o.special === "golden"
     if (isFreeze) {
-      s.freezeTimer = 3000
-      s.freezeCooldown = 14000 // 14s strict cooldown before another freeze can spawn
+      s.freezeTimer = 5000 // 5 seconds freeze duration
+      s.freezeCooldown = 12000 // 12s cooldown before next freeze orb can spawn
     }
 
     const kind = o.kind || FRUIT_KINDS[0]
@@ -684,9 +684,9 @@ export default function SliceStorm() {
       // Widen spawn across full playable stage (15% to 85% width)
       const x = rand(w * 0.15, w * 0.85)
       const minDim = Math.min(w, h)
-      // Raised lower boundaries so fruits are juicy and comfortable to slice, never tiny
-      const minR = Math.max(38, minDim * 0.095)
-      const maxR = Math.max(54, minDim * 0.135)
+      // Balanced arcade sizing so fruits are crisp and pleasant to slice
+      const minR = Math.max(26, minDim * 0.06)
+      const maxR = Math.max(40, minDim * 0.095)
       const r = rand(minR, maxR)
       const textureSeed = Array.from({ length: 44 }, () => Math.random())
 
@@ -767,14 +767,16 @@ export default function SliceStorm() {
         ctx.restore()
       }
 
-      // Spawning with difficulty ramp
-      s.lastSpawn += dt
-      const rampProgress = clamp(s.elapsed / 15000, 0, 1)
-      const minGap = lerp(560, 420, rampProgress)
-      if (s.lastSpawn > s.spawnGap) {
-        s.lastSpawn = 0
-        spawn(w, h)
-        s.spawnGap = Math.max(minGap, s.spawnGap - lerp(3, 6, rampProgress))
+      // Spawning with difficulty ramp (paused while screen is frozen)
+      if (!isFrozen) {
+        s.lastSpawn += dt
+        const rampProgress = clamp(s.elapsed / 15000, 0, 1)
+        const minGap = lerp(560, 420, rampProgress)
+        if (s.lastSpawn > s.spawnGap) {
+          s.lastSpawn = 0
+          spawn(w, h)
+          s.spawnGap = Math.max(minGap, s.spawnGap - lerp(3, 6, rampProgress))
+        }
       }
 
       // ---- whole fruit / bombs: physics + warning state + draw ----
@@ -795,12 +797,12 @@ export default function SliceStorm() {
           o.vyReal = -Math.sqrt(2 * gravityPerMs * targetHeight)
         }
 
-        // Frozen fruit hovers/moves at only 12% speed; bombs move at full 100% speed!
-        const objDt = isFrozen && !o.bomb ? dt * 0.12 : dt
+        // Matrix bullet-time freeze: ALL objects (fruits AND bombs) slow to 4% speed
+        const objDt = isFrozen ? dt * 0.04 : dt
         o.vyReal += 0.0015 * dpr * objDt
         o.y += o.vyReal * objDt
         o.x += o.vx * objDt
-        o.rot += o.vr * (isFrozen && !o.bomb ? 0.2 : 1)
+        o.rot += o.vr * (isFrozen ? 0.1 : 1)
         o.sparkPhase += dt * 0.02
 
         if (o.bomb) {
