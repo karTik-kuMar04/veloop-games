@@ -767,22 +767,32 @@ export default function SliceStorm() {
         ctx.restore()
       }
 
-      // Spawning with difficulty ramp (paused while screen is frozen)
-      if (!isFrozen) {
-        s.lastSpawn += dt
-        const rampProgress = clamp(s.elapsed / 15000, 0, 1)
-        const minGap = lerp(560, 420, rampProgress)
-        if (s.lastSpawn > s.spawnGap) {
-          s.lastSpawn = 0
-          spawn(w, h)
-          s.spawnGap = Math.max(minGap, s.spawnGap - lerp(3, 6, rampProgress))
-        }
+      // Spawning with difficulty ramp (continues during freeze so items keep being thrown)
+      s.lastSpawn += dt
+      const rampProgress = clamp(s.elapsed / 15000, 0, 1)
+      const minGap = lerp(560, 420, rampProgress)
+      if (s.lastSpawn > s.spawnGap) {
+        s.lastSpawn = 0
+        spawn(w, h)
+        s.spawnGap = Math.max(minGap, s.spawnGap - lerp(3, 6, rampProgress))
       }
 
       // ---- whole fruit / bombs: physics + warning state + draw ----
       for (const o of s.objects) {
         if (o.vyReal === 0) {
-          o.y = h + o.r
+          const gravityPerMs = 0.0015 * dpr
+          const targetHeight = rand(0.4, 0.75) * h
+          o.launchX = o.x
+
+          if (isFrozen) {
+            // Throw directly into visible midair play area and suspend immovable!
+            o.y = h - targetHeight
+            o.vyReal = 0.05 * dpr // initial downward nudge for when freeze wears off
+          } else {
+            o.y = h + o.r
+            o.vyReal = -Math.sqrt(2 * gravityPerMs * targetHeight)
+          }
+
           // Inward launch angle based on launch position
           if (o.x < w * 0.35) {
             o.vx = rand(0.08, 0.28) * dpr
@@ -791,18 +801,14 @@ export default function SliceStorm() {
           } else {
             o.vx = rand(-0.15, 0.15) * dpr
           }
-          o.launchX = o.x
-          const gravityPerMs = 0.0015 * dpr
-          const targetHeight = rand(0.55, 0.8) * h
-          o.vyReal = -Math.sqrt(2 * gravityPerMs * targetHeight)
         }
 
-        // Matrix bullet-time freeze: ALL objects (fruits AND bombs) slow to 4% speed
-        const objDt = isFrozen ? dt * 0.04 : dt
+        // Immovable in midair while frozen (0 movement/rotation); when freeze wears off, physics & gravity resume!
+        const objDt = isFrozen ? 0 : dt
         o.vyReal += 0.0015 * dpr * objDt
         o.y += o.vyReal * objDt
         o.x += o.vx * objDt
-        o.rot += o.vr * (isFrozen ? 0.1 : 1)
+        o.rot += o.vr * (isFrozen ? 0 : 1)
         o.sparkPhase += dt * 0.02
 
         if (o.bomb) {
