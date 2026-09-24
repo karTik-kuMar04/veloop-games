@@ -2,11 +2,13 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  height: 100svh;
-  height: 100dvh;
-  max-height: 100dvh;
-  background: radial-gradient(circle at 50% 0%, #2a1e0b 0%, #0b0e14 55%);
+  min-height: 100svh;
+  min-height: 100dvh;
   overflow: hidden;
+  background:
+    radial-gradient(circle at 50% -10%, rgba(34, 197, 94, 0.22), transparent 38%),
+    radial-gradient(circle at 10% 90%, rgba(16, 185, 129, 0.1), transparent 30%),
+    #080c12;
   padding-top: env(safe-area-inset-top);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
@@ -14,255 +16,527 @@
   box-sizing: border-box;
 }
 
-.canvasWrap {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-}
-
-.canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
-  touch-action: none;
-  cursor: crosshair;
-}
-
-.hudActions {
+/* HUD Stats */
+.hudStats {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
-.lives {
+.highestBadge {
   display: flex;
-  gap: 4px;
-  align-items: center;
-  transition: transform 0.1s ease;
-}
-
-.heartActive {
-  color: #ef4444;
-  filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.7));
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.heartEmpty {
-  color: rgba(255, 255, 255, 0.22);
-}
-
-.lifeLostShake {
-  animation: shakeLife 0.5s ease-in-out;
-}
-
-@keyframes shakeLife {
-  0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-6px) scale(1.1); }
-  40% { transform: translateX(5px) scale(0.95); }
-  60% { transform: translateX(-4px); }
-  80% { transform: translateX(2px); }
-}
-
-.pauseBtn {
-  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  padding: 4px 10px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #e2e8f0;
-  cursor: pointer;
-  transition: all 0.15s ease;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  line-height: 1.1;
+  min-width: 46px;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.pauseBtn:hover {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.25);
+.highestBadge:hover {
   transform: scale(1.05);
 }
 
-.pauseBtn:active {
-  transform: scale(0.95);
+.badgeLabel {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.85);
 }
 
-.combo {
+.badgeVal {
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.movesBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  line-height: 1.1;
+  min-width: 44px;
+}
+
+.movesBox span {
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+}
+
+.movesBox strong {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.boardWrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 10px 16px 26px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Board top bar with hint & undo */
+.boardTopBar {
+  width: min(100%, 440px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 4px;
+}
+
+.boardPrompt {
+  font-size: 0.88rem;
+  color: #94a3b8;
+}
+
+.boardPrompt strong {
+  color: #facc15;
+}
+
+.undoBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #e2e8f0;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.undoBtn:hover:not(:disabled) {
+  background: rgba(34, 197, 94, 0.18);
+  border-color: rgba(34, 197, 94, 0.4);
+  color: #4ade80;
+  transform: translateY(-1px);
+}
+
+.undoBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Board Outer Container for ambient glow & effects */
+.boardContainer {
+  position: relative;
+  width: min(100%, 440px);
+  aspect-ratio: 1;
+  transition: transform 0.2s ease;
+}
+
+.boardShake {
+  animation: boardThump 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes boardThump {
+  0%, 100% { transform: scale(1); }
+  20% { transform: scale(1.025); }
+  40% { transform: scale(0.985); }
+  60% { transform: scale(1.015); }
+  80% { transform: scale(0.995); }
+}
+
+/* Board Grid */
+.board {
+  --gap: 10px;
+  --pad: 10px;
+
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  gap: var(--gap);
+
+  padding: var(--pad);
+  border-radius: 24px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.09),
+      rgba(255, 255, 255, 0.035)
+    );
+
+  border: 1px solid rgba(255, 255, 255, 0.12);
+
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.6),
+    0 0 45px color-mix(in srgb, var(--tile-glow, #22c55e) 28%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  touch-action: none;
+  user-select: none;
+  transition: box-shadow 0.4s ease;
+}
+
+/* Empty cells */
+.cell {
+  box-sizing: border-box;
+  border-radius: 14px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.055),
+      rgba(255, 255, 255, 0.025)
+    );
+  border: 1px solid rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.18);
+}
+
+/* Hardware-Accelerated Sliding Tile Slot
+ *
+ * FIX (tiles overlapping): the old version built its translate distance from
+ * `--step`, which contained a `100%`. Inside `width`/`height` that % resolves
+ * against the board (correct), but inside `transform: translate3d()` a % resolves
+ * against the ELEMENT ITSELF, so every step collapsed to a few px and all tiles
+ * piled up in the top-left corner.
+ *
+ * Now: width/height still use the board-relative % (they are correct), while the
+ * translate uses `100%` = one tile size, plus one --gap per step. Expects --r and
+ * --c to be plain unitless numbers (0-3) set inline on the slot.
+ */
+.tileSlot {
+  --cellSize: calc((100% - 2 * var(--pad) - 3 * var(--gap)) / 4);
+
+  position: absolute;
+  box-sizing: border-box;
+  top: var(--pad);
+  left: var(--pad);
+  width: var(--cellSize);
+  height: var(--cellSize);
+
+  /* Fluid GPU-accelerated spring slide */
+  transform: translate3d(
+    calc(var(--c) * (100% + var(--gap))),
+    calc(var(--r) * (100% + var(--gap))),
+    0
+  );
+  transition: transform 160ms cubic-bezier(0.18, 0.92, 0.3, 1.05);
+  will-change: transform;
+  pointer-events: none;
+}
+
+/* Inner Tile (handles merge bump, shine, and visual depth) */
+.tile {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: 1;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  transition: box-shadow 0.25s ease;
+}
+
+/* Tile glossy top shine */
+.tile::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.24),
+      transparent 35%,
+      transparent 70%,
+      rgba(255, 255, 255, 0.06)
+    );
+}
+
+/* New tile spawn pop-in */
+.new {
+  animation: tileAppear 210ms cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
+}
+
+/* Normal merge bump */
+.merged {
+  animation: tileMergeBump 220ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* NEW HIGHEST TILE: Shockwave & Golden Aura */
+.newMax {
+  animation: newMaxShockwave 650ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.crownSparkle {
+  position: absolute;
+  top: 3px;
+  right: 5px;
+  font-size: 0.95rem;
+  filter: drop-shadow(0 0 6px #facc15);
+  animation: crownBob 1s ease-in-out infinite alternate;
+}
+
+@keyframes crownBob {
+  from { transform: translateY(0) scale(0.9); }
+  to { transform: translateY(-3px) scale(1.15); }
+}
+
+@keyframes tileAppear {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  65% {
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes tileMergeBump {
+  0% {
+    transform: scale(0.9);
+  }
+  45% {
+    transform: scale(1.18);
+  }
+  75% {
+    transform: scale(0.97);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes newMaxShockwave {
+  0% {
+    transform: scale(0.8);
+    box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.95), 0 0 25px rgba(250, 204, 21, 0.9);
+  }
+  40% {
+    transform: scale(1.24);
+    box-shadow: 0 0 0 16px rgba(250, 204, 21, 0), 0 0 45px rgba(250, 204, 21, 0.95);
+  }
+  70% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 25px rgba(250, 204, 21, 0.65);
+  }
+}
+
+/* Floating score popups on merges
+ * Same % fix as .tileSlot: translate % is relative to the popup's own box.
+ */
+.scorePopup {
+  --cellSize: calc((100% - 2 * var(--pad) - 3 * var(--gap)) / 4);
+
+  position: absolute;
+  box-sizing: border-box;
+  top: var(--pad);
+  left: var(--pad);
+  width: var(--cellSize);
+  height: var(--cellSize);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #facc15;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8), 0 0 14px rgba(250, 204, 21, 0.85);
+  pointer-events: none;
+  z-index: 25;
+  animation: scoreFloat 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes scoreFloat {
+  0% {
+    opacity: 0;
+    transform:
+      translate3d(
+        calc(var(--c) * (100% + var(--gap))),
+        calc(var(--r) * (100% + var(--gap))),
+        0
+      )
+      scale(0.6);
+  }
+  25% {
+    opacity: 1;
+    transform:
+      translate3d(
+        calc(var(--c) * (100% + var(--gap))),
+        calc(var(--r) * (100% + var(--gap)) - 15px),
+        0
+      )
+      scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform:
+      translate3d(
+        calc(var(--c) * (100% + var(--gap))),
+        calc(var(--r) * (100% + var(--gap)) - 38px),
+        0
+      )
+      scale(0.85);
+  }
+}
+
+/* New Highest Tile Celebration Banner */
+.newMaxBanner {
   position: absolute;
   top: 20%;
   left: 50%;
   transform: translateX(-50%);
+  z-index: 45;
   display: flex;
   flex-direction: column;
   align-items: center;
   pointer-events: none;
-  animation: popCombo 0.85s ease forwards;
+  animation: bannerEnter 2.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.comboCount {
+.newMaxBadge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0.65rem 1.6rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(20, 24, 33, 0.96), rgba(10, 12, 18, 0.98));
+  border: 2px solid #facc15;
+  box-shadow:
+    0 0 32px rgba(250, 204, 21, 0.75),
+    0 10px 25px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.newMaxIcon {
+  font-size: 1.35rem;
+  filter: drop-shadow(0 0 8px #facc15);
+  animation: spinIcon 2s ease-in-out infinite alternate;
+}
+
+@keyframes spinIcon {
+  from { transform: rotate(-10deg) scale(0.9); }
+  to { transform: rotate(10deg) scale(1.15); }
+}
+
+.newMaxText {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+}
+
+.newMaxSub {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #facc15;
+  text-shadow: 0 0 8px rgba(250, 204, 21, 0.6);
+}
+
+.newMaxVal {
   font-family: var(--font-display);
-  font-size: clamp(2rem, 6vw, 3.2rem);
+  font-size: 1.55rem;
   font-weight: 900;
+  color: #ffffff;
   letter-spacing: -0.02em;
-  color: #fde68a;
-  text-shadow: 0 4px 20px rgba(245, 158, 11, 0.8), 0 0 10px #f59e0b;
 }
 
-.comboBonus {
-  font-family: var(--font-body);
-  font-size: clamp(0.95rem, 2.5vw, 1.25rem);
-  font-weight: 700;
-  color: #34d399;
-  text-shadow: 0 2px 10px rgba(52, 211, 153, 0.6);
-  margin-top: -4px;
-}
-
-@keyframes popCombo {
+@keyframes bannerEnter {
   0% {
-    transform: translateX(-50%) scale(0.3);
+    transform: translateX(-50%) scale(0.3) translateY(20px);
     opacity: 0;
   }
-  25% {
-    transform: translateX(-50%) scale(1.15);
+  15% {
+    transform: translateX(-50%) scale(1.12) translateY(0);
     opacity: 1;
   }
-  75% {
+  25% {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+  80% {
     transform: translateX(-50%) scale(1);
     opacity: 1;
   }
   100% {
-    transform: translateX(-50%) scale(0.95) translateY(-32px);
+    transform: translateX(-50%) scale(0.95) translateY(-25px);
     opacity: 0;
   }
 }
 
-/* Pause Overlay */
-.pauseOverlay {
+/* Multi-merge Combo Alert */
+.comboAlert {
   position: absolute;
-  inset: 0;
-  background: rgba(7, 10, 15, 0.78);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  display: grid;
-  place-items: center;
-  z-index: 50;
-  animation: fadeIn 0.2s ease;
-  padding: 20px;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.pauseCard {
-  background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 20px;
-  padding: 32px 28px;
-  max-width: 360px;
-  width: 100%;
-  text-align: center;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
-  animation: zoomCard 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes zoomCard {
-  from {
-    transform: scale(0.9);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-.pauseTitle {
+  top: 36%;
+  left: 50%;
+  transform: translateX(-50%);
   font-family: var(--font-display);
-  font-size: 1.8rem;
-  font-weight: 800;
-  color: #f8fafc;
-  margin: 0 0 8px;
+  font-size: 1.45rem;
+  font-weight: 900;
+  color: #38bdf8;
+  text-shadow: 0 0 16px rgba(56, 189, 248, 0.85), 0 2px 6px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+  z-index: 30;
+  animation: comboPop 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.pauseText {
-  font-size: 0.95rem;
-  color: #94a3b8;
-  margin: 0 0 24px;
+@keyframes comboPop {
+  0% { transform: translateX(-50%) scale(0.4); opacity: 0; }
+  25% { transform: translateX(-50%) scale(1.2); opacity: 1; }
+  70% { transform: translateX(-50%) scale(1); opacity: 1; }
+  100% { transform: translateX(-50%) scale(0.9) translateY(-20px); opacity: 0; }
 }
 
-.pauseActions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.primaryPauseBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 14px 20px;
-  border-radius: 12px;
-  background: var(--accent, #f59e0b);
-  color: #0b0e14;
-  font-weight: 700;
-  font-size: 1rem;
-  border: none;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.35);
-}
-
-.primaryPauseBtn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5);
-}
-
-.ghostPauseBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 20px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #e2e8f0;
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.ghostPauseBtn:hover {
-  background: rgba(255, 255, 255, 0.14);
-}
-
-.quitPauseBtn {
-  background: none;
-  border: none;
-  color: #64748b;
-  font-size: 0.88rem;
-  font-weight: 500;
-  cursor: pointer;
-  padding: 6px;
-  transition: color 0.15s ease;
-}
-
-.quitPauseBtn:hover {
-  color: #ef4444;
-}
-
-/* --- In-Game High Score Graffiti Popup --- */
+/* In-Game High Score Graffiti Popup */
 .inGameGraffiti {
   position: absolute;
   top: 15%;
   left: 50%;
-  transform: translateX(-50%) rotate(-4deg);
+  transform: translateX(-50%) rotate(-3deg);
   pointer-events: none;
-  z-index: 40;
+  z-index: 45;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -271,7 +545,7 @@
 
 .inGameGraffitiText {
   font-family: var(--font-display);
-  font-size: clamp(1.6rem, 5.5vw, 2.8rem);
+  font-size: clamp(1.5rem, 5vw, 2.5rem);
   font-weight: 900;
   letter-spacing: 0.05em;
   padding: 0.6rem 1.6rem;
@@ -309,62 +583,106 @@
     opacity: 1;
   }
   25% {
-    transform: translateX(-50%) scale(1) rotate(-4deg);
+    transform: translateX(-50%) scale(1) rotate(-3deg);
     opacity: 1;
   }
   80% {
-    transform: translateX(-50%) scale(1) rotate(-4deg);
+    transform: translateX(-50%) scale(1) rotate(-3deg);
     opacity: 1;
   }
   100% {
-    transform: translateX(-50%) scale(0.9) translateY(-25px) rotate(-4deg);
+    transform: translateX(-50%) scale(0.9) translateY(-25px) rotate(-3deg);
     opacity: 0;
   }
 }
 
-/* --- Countdown overlay (3, 2, 1, Go!) shown before a fresh run starts --- */
-
-.countdownWrap {
-  flex: 1;
-  display: grid;
-  place-items: center;
+/* Desktop controls */
+.controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
 }
 
-.countdownNumber {
-  font-family: var(--font-display);
+.controlRow {
+  display: flex;
+  gap: 10px;
+}
+
+.controls button {
+  width: 54px;
+  height: 54px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 16px;
+
+  border: 1px solid rgba(255, 255, 255, 0.12);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.11),
+      rgba(255, 255, 255, 0.055)
+    );
+
+  color: var(--accent, #22c55e);
+
+  font-size: 1.15rem;
   font-weight: 800;
-  font-size: clamp(4.5rem, 22vw, 9rem);
-  color: var(--accent, #f59e0b);
-  text-shadow: 0 0 40px color-mix(in srgb, var(--accent, #f59e0b) 65%, transparent);
-  animation: countdown-pop 0.72s cubic-bezier(0.2, 1.4, 0.4, 1);
+
+  cursor: pointer;
+
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  transition:
+    background 150ms ease,
+    transform 100ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
-@keyframes countdown-pop {
-  0% {
-    transform: scale(0.3);
-    opacity: 0;
-  }
-  40% {
-    transform: scale(1.15);
-    opacity: 1;
-  }
-  70% {
-    transform: scale(0.96);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
+.controls button:hover {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(34, 197, 94, 0.18),
+      rgba(255, 255, 255, 0.08)
+    );
+
+  border-color: rgba(34, 197, 94, 0.35);
+
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.3),
+    0 0 18px rgba(34, 197, 94, 0.12);
+}
+
+.controls button:active {
+  transform: scale(0.91);
+}
+
+.hint {
+  margin: 2px 0 0;
+  font-size: 0.82rem;
+  color: var(--muted, #8b93a7);
+}
+
+/* Hide controls on mobile */
+@media (max-width: 719px) {
+  .controls {
+    display: none;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .countdownNumber {
-    animation: none;
+  .tileSlot {
+    transition: none;
   }
-  .combo {
-    animation: none;
-  }
-  .lifeLostShake {
+  .tile, .new, .merged, .newMax {
     animation: none;
   }
 }

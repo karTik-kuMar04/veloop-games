@@ -30,23 +30,28 @@
   justify-content: center;
   padding: 4px 10px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
   line-height: 1.1;
-  min-width: 44px;
+  min-width: 46px;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.highestBadge:hover {
+  transform: scale(1.05);
 }
 
 .badgeLabel {
   font-size: 0.62rem;
   font-weight: 800;
-  letter-spacing: 0.05em;
-  color: rgba(255, 255, 255, 0.8);
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .badgeVal {
   font-family: var(--font-display);
-  font-size: 0.95rem;
-  font-weight: 800;
+  font-size: 0.98rem;
+  font-weight: 900;
   color: #ffffff;
 }
 
@@ -58,7 +63,7 @@
   padding: 4px 10px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   line-height: 1.1;
   min-width: 44px;
 }
@@ -84,8 +89,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  padding: 12px 16px 28px;
+  gap: 14px;
+  padding: 10px 16px 26px;
   min-width: 0;
   width: 100%;
   box-sizing: border-box;
@@ -139,14 +144,37 @@
   transform: none;
 }
 
-/* Board */
+/* Board Outer Container for ambient glow & effects */
+.boardContainer {
+  position: relative;
+  width: min(100%, 440px);
+  aspect-ratio: 1;
+  transition: transform 0.2s ease;
+}
+
+.boardShake {
+  animation: boardThump 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes boardThump {
+  0%, 100% { transform: scale(1); }
+  20% { transform: scale(1.025); }
+  40% { transform: scale(0.985); }
+  60% { transform: scale(1.015); }
+  80% { transform: scale(0.995); }
+}
+
+/* Board Grid */
 .board {
   --gap: 10px;
   --pad: 10px;
 
   position: relative;
-  width: min(100%, 440px);
-  aspect-ratio: 1;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  container-type: size;
+  container-name: merge-board;
 
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -154,7 +182,6 @@
   gap: var(--gap);
 
   padding: var(--pad);
-
   border-radius: 24px;
 
   background:
@@ -164,147 +191,382 @@
       rgba(255, 255, 255, 0.035)
     );
 
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 
   box-shadow:
-    0 30px 80px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    0 30px 80px rgba(0, 0, 0, 0.6),
+    0 0 45px color-mix(in srgb, var(--tile-glow, #22c55e) 28%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 
   touch-action: none;
   user-select: none;
+  transition: box-shadow 0.4s ease;
 }
 
 /* Empty cells */
 .cell {
   border-radius: 14px;
-
   background:
     linear-gradient(
       145deg,
       rgba(255, 255, 255, 0.055),
       rgba(255, 255, 255, 0.025)
     );
-
   border: 1px solid rgba(255, 255, 255, 0.035);
-
-  box-shadow:
-    inset 0 1px 4px rgba(0, 0, 0, 0.18);
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.18);
 }
 
-/* Tiles */
-.tile {
+/* Hardware-accelerated sliding tile. Use cqw so transform %
+   is relative to the board, not the tile itself. */
+.tileSlot {
+  /* 100cqw is the board content box (inside padding), matching the CSS grid. */
+  --cellSize: calc((100cqw - 3 * var(--gap)) / 4);
+  --step: calc(var(--cellSize) + var(--gap));
+
   position: absolute;
+  top: var(--pad);
+  left: var(--pad);
+  width: var(--cellSize);
+  height: var(--cellSize);
 
-  width: calc((100% - 2 * var(--pad) - 3 * var(--gap)) / 4);
-  height: calc((100% - 2 * var(--pad) - 3 * var(--gap)) / 4);
+  transform: translate3d(calc(var(--c) * var(--step)), calc(var(--r) * var(--step)), 0);
+  transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+  pointer-events: none;
+}
 
-  left: calc(
-    var(--pad) +
-    var(--c) *
-      (
-        (100% - 2 * var(--pad) - 3 * var(--gap)) / 4 +
-        var(--gap)
-      )
-  );
+.tileSlotSpawn {
+  transition: none;
+}
 
-  top: calc(
-    var(--pad) +
-    var(--r) *
-      (
-        (100% - 2 * var(--pad) - 3 * var(--gap)) / 4 +
-        var(--gap)
-      )
-  );
+.tileSlotAbsorbed {
+  z-index: 3;
+}
 
+/* Inner Tile (handles merge bump, shine, and visual depth) */
+.tile {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-
   border-radius: 14px;
-
   font-family: var(--font-display);
   font-weight: 800;
   line-height: 1;
-
-  /* Main slide animation */
-  transition:
-    left 160ms cubic-bezier(0.22, 1, 0.36, 1),
-    top 160ms cubic-bezier(0.22, 1, 0.36, 1);
-
-  will-change: left, top;
-
-  /* Tile depth */
-  box-shadow:
-    0 10px 20px rgba(0, 0, 0, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-
-  border: 1px solid rgba(255, 255, 255, 0.12);
-
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.16);
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
-
-  z-index: 2;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  transition: box-shadow 0.25s ease;
 }
 
-/* Subtle shine */
+/* Tile glossy top shine */
 .tile::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-
   background:
     linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.2),
+      rgba(255, 255, 255, 0.24),
       transparent 35%,
       transparent 70%,
-      rgba(255, 255, 255, 0.05)
+      rgba(255, 255, 255, 0.06)
     );
 }
 
-/* New tile */
+/* New tile spawn pop-in */
 .new {
-  animation: appear 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: tileAppear 210ms cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
 }
 
-/* Merge */
+/* Normal merge bump */
 .merged {
-  z-index: 3;
-  animation: bump 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: tileMergeBump 220ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-@keyframes appear {
+/* NEW HIGHEST TILE: Shockwave & Golden Aura */
+.newMax {
+  animation: newMaxShockwave 650ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.crownSparkle {
+  position: absolute;
+  top: 3px;
+  right: 5px;
+  font-size: 0.95rem;
+  filter: drop-shadow(0 0 6px #facc15);
+  animation: crownBob 1s ease-in-out infinite alternate;
+}
+
+@keyframes crownBob {
+  from { transform: translateY(0) scale(0.9); }
+  to { transform: translateY(-3px) scale(1.15); }
+}
+
+@keyframes tileAppear {
   0% {
     opacity: 0;
-    transform: scale(0.45);
+    transform: scale(0.2);
   }
-
-  70% {
+  65% {
+    transform: scale(1.1);
+  }
+  100% {
     opacity: 1;
-    transform: scale(1.08);
+    transform: scale(1);
   }
+}
 
+@keyframes tileMergeBump {
+  0% {
+    transform: scale(0.9);
+  }
+  45% {
+    transform: scale(1.18);
+  }
+  75% {
+    transform: scale(0.97);
+  }
   100% {
     transform: scale(1);
   }
 }
 
-@keyframes bump {
+@keyframes newMaxShockwave {
   0% {
-    transform: scale(1);
+    transform: scale(0.8);
+    box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.95), 0 0 25px rgba(250, 204, 21, 0.9);
   }
-
   40% {
-    transform: scale(1.16);
+    transform: scale(1.24);
+    box-shadow: 0 0 0 16px rgba(250, 204, 21, 0), 0 0 45px rgba(250, 204, 21, 0.95);
   }
-
   70% {
-    transform: scale(0.97);
+    transform: scale(0.95);
   }
-
   100% {
     transform: scale(1);
+    box-shadow: 0 0 25px rgba(250, 204, 21, 0.65);
+  }
+}
+
+/* Floating score popups on merges */
+.scorePopup {
+  --cellSize: calc((100cqw - 3 * var(--gap)) / 4);
+  --step: calc(var(--cellSize) + var(--gap));
+
+  position: absolute;
+  top: var(--pad);
+  left: var(--pad);
+  width: var(--cellSize);
+  height: var(--cellSize);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #facc15;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8), 0 0 14px rgba(250, 204, 21, 0.85);
+  pointer-events: none;
+  z-index: 25;
+  animation: scoreFloat 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes scoreFloat {
+  0% {
+    opacity: 0;
+    transform: translate3d(calc(var(--c) * var(--step)), calc(var(--r) * var(--step)), 0) scale(0.6);
+  }
+  25% {
+    opacity: 1;
+    transform: translate3d(calc(var(--c) * var(--step)), calc(var(--r) * var(--step) - 15px), 0) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(calc(var(--c) * var(--step)), calc(var(--r) * var(--step) - 38px), 0) scale(0.85);
+  }
+}
+
+/* New Highest Tile Celebration Banner */
+.newMaxBanner {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  animation: bannerEnter 2.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.newMaxBadge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0.65rem 1.6rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(20, 24, 33, 0.96), rgba(10, 12, 18, 0.98));
+  border: 2px solid #facc15;
+  box-shadow:
+    0 0 32px rgba(250, 204, 21, 0.75),
+    0 10px 25px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.newMaxIcon {
+  font-size: 1.35rem;
+  filter: drop-shadow(0 0 8px #facc15);
+  animation: spinIcon 2s ease-in-out infinite alternate;
+}
+
+@keyframes spinIcon {
+  from { transform: rotate(-10deg) scale(0.9); }
+  to { transform: rotate(10deg) scale(1.15); }
+}
+
+.newMaxText {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+}
+
+.newMaxSub {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #facc15;
+  text-shadow: 0 0 8px rgba(250, 204, 21, 0.6);
+}
+
+.newMaxVal {
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+@keyframes bannerEnter {
+  0% {
+    transform: translateX(-50%) scale(0.3) translateY(20px);
+    opacity: 0;
+  }
+  15% {
+    transform: translateX(-50%) scale(1.12) translateY(0);
+    opacity: 1;
+  }
+  25% {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+  80% {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) scale(0.95) translateY(-25px);
+    opacity: 0;
+  }
+}
+
+/* Multi-merge Combo Alert */
+.comboAlert {
+  position: absolute;
+  top: 36%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 900;
+  color: #38bdf8;
+  text-shadow: 0 0 16px rgba(56, 189, 248, 0.85), 0 2px 6px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+  z-index: 30;
+  animation: comboPop 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes comboPop {
+  0% { transform: translateX(-50%) scale(0.4); opacity: 0; }
+  25% { transform: translateX(-50%) scale(1.2); opacity: 1; }
+  70% { transform: translateX(-50%) scale(1); opacity: 1; }
+  100% { transform: translateX(-50%) scale(0.9) translateY(-20px); opacity: 0; }
+}
+
+/* In-Game High Score Graffiti Popup */
+.inGameGraffiti {
+  position: absolute;
+  top: 15%;
+  left: 50%;
+  transform: translateX(-50%) rotate(-3deg);
+  pointer-events: none;
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: graffitiBannerPop 2.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.inGameGraffitiText {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 5vw, 2.5rem);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  padding: 0.6rem 1.6rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 50%, #facc15 100%);
+  color: #ffffff;
+  text-shadow:
+    2px 2px 0px #000,
+    -1px -1px 0px #000,
+    1px -1px 0px #000,
+    -1px 1px 0px #000,
+    0 0 16px rgba(0, 0, 0, 0.85);
+  box-shadow:
+    0 0 35px rgba(244, 63, 94, 0.85),
+    0 0 14px rgba(250, 204, 21, 0.9),
+    inset 0 1px 2px rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+}
+
+.inGameGraffitiSplatter {
+  position: absolute;
+  inset: -12px -20px;
+  background: radial-gradient(circle, rgba(244, 63, 94, 0.4) 0%, transparent 70%);
+  filter: blur(8px);
+  pointer-events: none;
+}
+
+@keyframes graffitiBannerPop {
+  0% {
+    transform: translateX(-50%) scale(0.2) rotate(-16deg);
+    opacity: 0;
+  }
+  15% {
+    transform: translateX(-50%) scale(1.15) rotate(2deg);
+    opacity: 1;
+  }
+  25% {
+    transform: translateX(-50%) scale(1) rotate(-3deg);
+    opacity: 1;
+  }
+  80% {
+    transform: translateX(-50%) scale(1) rotate(-3deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) scale(0.9) translateY(-25px) rotate(-3deg);
+    opacity: 0;
   }
 }
 
@@ -379,7 +641,6 @@
 
 .hint {
   margin: 2px 0 0;
-
   font-size: 0.82rem;
   color: var(--muted, #8b93a7);
 }
@@ -392,12 +653,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tile {
+  .tileSlot {
     transition: none;
   }
-
-  .new,
-  .merged {
+  .tile, .new, .merged, .newMax {
     animation: none;
   }
 }
