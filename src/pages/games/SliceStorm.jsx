@@ -558,6 +558,38 @@ export default function SliceStorm() {
     ctx.restore()
   }
 
+  // Thin icy shell drawn on top of a whole fruit/bomb while it's frozen in
+  // midair, so it visually reads as "locked in place" rather than just
+  // having stopped for no reason.
+  function drawFrostOverlay(ctx, o) {
+    const r = o.r
+    ctx.save()
+    ctx.translate(o.x, o.y)
+
+    ctx.save()
+    ctx.globalAlpha = 0.42
+    const frost = ctx.createRadialGradient(0, 0, r * 0.15, 0, 0, r * 1.15)
+    frost.addColorStop(0, "rgba(224, 242, 254, 0.05)")
+    frost.addColorStop(0.6, "rgba(125, 211, 252, 0.35)")
+    frost.addColorStop(1, "rgba(56, 189, 248, 0.55)")
+    ctx.fillStyle = frost
+    ctx.beginPath()
+    ctx.arc(0, 0, r * 1.12, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.restore()
+
+    ctx.save()
+    ctx.globalAlpha = 0.85
+    ctx.strokeStyle = "#e0f2fe"
+    ctx.lineWidth = Math.max(1.5, r * 0.06)
+    ctx.beginPath()
+    ctx.arc(0, 0, r, 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.restore()
+
+    ctx.restore()
+  }
+
   // ---------------------------------------------------------------------
   // Slice reaction
   // ---------------------------------------------------------------------
@@ -696,6 +728,8 @@ export default function SliceStorm() {
         r,
         vx: 0,
         vyReal: 0,
+        launched: false, // becomes true once the initial launch velocity is set
+        frozen: false, // true while this object is locked in place by the freeze effect
         color: null,
         bomb: isBomb,
         special,
@@ -779,7 +813,7 @@ export default function SliceStorm() {
 
       // ---- whole fruit / bombs: physics + warning state + draw ----
       for (const o of s.objects) {
-        if (o.vyReal === 0) {
+        if (!o.launched) {
           const gravityPerMs = 0.0015 * dpr
           const targetHeight = rand(0.5, 0.78) * h
           o.launchX = o.x
@@ -794,25 +828,44 @@ export default function SliceStorm() {
           } else {
             o.vx = rand(-0.15, 0.15) * dpr
           }
+          o.launched = true
         }
 
-        // Fruit Ninja style bullet-time freeze: items move at 8% slow-mo speed during freeze.
-        // They rise smoothly from bottom to high point of projectile, hang near apex, and fall when freeze wears off!
-        const objDt = isFrozen ? dt * 0.08 : dt
-        o.vyReal += 0.0015 * dpr * objDt
-        o.y += o.vyReal * objDt
-        o.x += o.vx * objDt
-        o.rot += o.vr * (isFrozen ? 0.15 : 1)
-        o.sparkPhase += dt * 0.02
+        // Fruit Ninja style freeze: every object launches and arcs at full,
+        // regular speed — no slow-mo. The instant an object reaches the high
+        // point of its arc (vyReal flips from rising to falling) while the
+        // freeze effect is active, it locks in place completely: position,
+        // rotation, everything holds still. It stays locked until the freeze
+        // effect's duration runs out, then resumes falling from right where
+        // it was hanging. Applies to bombs exactly like fruit — if the player
+        // doesn't slice a frozen bomb, it simply falls once freeze ends.
+        if (o.frozen && !isFrozen) {
+          o.frozen = false // freeze window ended — release it to keep falling
+        }
 
-        if (o.bomb) {
-          const nearTop = o.y < h * 0.35 && o.vyReal < 0
-          o.warn = nearTop ? clamp(o.warn + dt * 0.006, 0, 1) : Math.max(0, o.warn - dt * 0.004)
+        if (!o.frozen) {
+          o.vyReal += 0.0015 * dpr * dt
+          o.y += o.vyReal * dt
+          o.x += o.vx * dt
+          o.rot += o.vr
+          o.sparkPhase += dt * 0.02
+
+          if (o.bomb) {
+            const nearTop = o.y < h * 0.35 && o.vyReal < 0
+            o.warn = nearTop ? clamp(o.warn + dt * 0.006, 0, 1) : Math.max(0, o.warn - dt * 0.004)
+          }
+
+          // Just crossed the apex (about to start falling) while freeze is
+          // active — lock it here.
+          if (isFrozen && o.vyReal >= 0) {
+            o.frozen = true
+          }
         }
 
         if (!o.sliced) {
           if (o.bomb) drawBomb(ctx, o)
           else drawFruit(ctx, o, dpr)
+          if (o.frozen) drawFrostOverlay(ctx, o)
         }
       }
 
